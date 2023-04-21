@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.junit.Test;
 
@@ -37,22 +36,21 @@ public class FundingLoanContractRepayTest {
     @Test
     public void testRepayTrail() throws SQLException {
         DbHandler.INIT.initMySqlConnectionFactory();
-        List l = tested.preRepayTrail("F633664211301700", LocalDateTime.of(2022,3,8, 11,12));
-        l.stream().forEach(new Consumer() {
-            @Override
-            public void accept(Object o) {
-                System.out.println(o.toString());
-            }
-        });
+        List l = tested.preRepayTrail("F645978586742000", LocalDateTime.of(2022,3,9, 11,12));
+        l.stream().forEach(System.out::println);
     }
 
     @Test
     public void testRepay() throws SQLException {
         DbHandler.INIT.initMySqlConnectionFactory();
-        List l = tested.preRepayTrail("F633664211301700", LocalDateTime.of(2022,3,8, 11,12));
+
+        String contractNo = "F645978586742000";
+        LocalDateTime repayDateTime = LocalDateTime.of(2022,3,8, 11,12);
+
+        List l = tested.preRepayTrail(contractNo, repayDateTime);
         l.stream().forEach(System.out::println);
-        tested.repay("F633664211301700", LocalDateTime.of(2022,3,8, 11,12), new BigDecimal("1100"));
-        l = tested.preRepayTrail("F633664211301700", LocalDateTime.of(2022,3,8, 11,12));
+        tested.repay(contractNo, repayDateTime, new BigDecimal("10"));
+        l = tested.preRepayTrail(contractNo, repayDateTime);
         l.stream().forEach(System.out::println);
     }
 

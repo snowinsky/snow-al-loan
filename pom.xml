@@ -14,23 +14,33 @@
     </properties>
 
     <dependencies>
+        <!-- orm 操作数据库的 这东西居然和lombok一样，需要装IDE插件才能用 -->
         <dependency>
             <groupId>com.github.braisdom</groupId>
             <artifactId>objective-sql</artifactId>
             <version>1.4.6</version>
         </dependency>
+        <!-- 计算比较多，写公式的 -->
+        <dependency>
+            <groupId>com.googlecode.aviator</groupId>
+            <artifactId>aviator</artifactId>
+            <version>5.3.3</version>
+        </dependency>
+        <!-- 生成get set方法的 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.24</version>
             <scope>provided</scope>
         </dependency>
+        <!-- mysql数据库驱动 -->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.26</version>
             <scope>runtime</scope>
         </dependency>
+        <!-- 单元测试 -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
