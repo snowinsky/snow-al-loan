@@ -50,22 +50,22 @@ public class TAlLoanContract implements Serializable {
     /**
      * 到期还款日
      */
-    private Byte repayDay;
+    private Integer repayDay;
 
     /**
      * 宽限天数
      */
-    private Byte graceDay;
+    private Integer graceDay;
 
     /**
      * 代偿天数
      */
-    private Byte compensationDay;
+    private Integer compensationDay;
 
     /**
      * 贷款期数
      */
-    private Byte loanTerm;
+    private Integer loanTerm;
 
     /**
      * 首期还款日

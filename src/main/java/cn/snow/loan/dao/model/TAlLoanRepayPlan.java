@@ -25,7 +25,7 @@ public class TAlLoanRepayPlan implements Serializable {
     /**
      * 贷款期数
      */
-    private Byte loanTerm;
+    private Integer loanTerm;
 
     /**
      * 还款日

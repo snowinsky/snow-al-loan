@@ -55,8 +55,8 @@ CREATE TABLE t_al_loan_contract
     compensation_day    TINYINT        NOT NULL COMMENT '代偿天数',
     loan_term           TINYINT        NOT NULL COMMENT '贷款期数',
     first_repay_date    DATETIME       NOT NULL COMMENT '首期还款日',
-    compensation_date   DATETIME       NOT NULL COMMENT '整笔代偿日',
-    loan_late_fee       DECIMAL(20, 2) NOT NULL COMMENT '整笔贷款滞纳金',
+    compensation_date   DATETIME COMMENT '整笔代偿日',
+    loan_late_fee       DECIMAL(20, 2) NOT NULL default '0' COMMENT '整笔贷款滞纳金',
     last_repay_date     DATETIME       NOT NULL COMMENT '上一次还款日',
     PRIMARY KEY pk_al_loan_contract (id),
     UNIQUE INDEX uk_al_loan_contract (contract_no)

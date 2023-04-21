@@ -40,14 +40,14 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                     TAlLoanContract c = new TAlLoanContract();
                     c.setContractNo(alLoanContract.contractNo());
                     c.setFundingContractNo(fundingLoanContract.contractNo());
-                    c.setYearRate(alLoanContract.getLoanRate().getYearRate());
-                    c.setBreachFeeRate(alLoanContract.alLoanRate().getBreachFeeRate().getDayRate());
-                    c.setTermLateFeeRate(alLoanContract.alLoanRate().getTermLateFeeRate().getDayRate());
-                    c.setLoanLateFeeRate(alLoanContract.alLoanRate().getLoanLateFeeRate().getDayRate());
-                    c.setRepayDay((byte) alLoanContract.repayDay());
-                    c.setGraceDay((byte) alLoanContract.dayOfGrace());
-                    c.setCompensationDay((byte) alLoanContract.dayOfCompensation());
-                    c.setLoanTerm((byte) alLoanContract.getLoanTerm().getTerm());
+                    c.setYearRate(alLoanContract.getLoanRate().getYearRateBeforePercent());
+                    c.setBreachFeeRate(alLoanContract.alLoanRate().getBreachFeeRate().getDayRateBeforePercent());
+                    c.setTermLateFeeRate(alLoanContract.alLoanRate().getTermLateFeeRate().getDayRateBeforePercent());
+                    c.setLoanLateFeeRate(alLoanContract.alLoanRate().getLoanLateFeeRate().getDayRateBeforePercent());
+                    c.setRepayDay(alLoanContract.repayDay());
+                    c.setGraceDay(alLoanContract.dayOfGrace());
+                    c.setCompensationDay(alLoanContract.dayOfCompensation());
+                    c.setLoanTerm(alLoanContract.getLoanTerm().getTerm());
                     c.setFirstRepayDate(alLoanContract.firstRepayDate().atStartOfDay());
                     c.setCompensationDate(null);
                     c.setLoanLateFee(BigDecimal.ZERO);
@@ -62,7 +62,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                 for (int i = 0; i < contract.getLoanTerm().getTerm(); i++) {
                     TAlLoanRepayPlan p = new TAlLoanRepayPlan();
                     p.setContractNo(alLoanContract.contractNo());
-                    p.setLoanTerm((byte) alLoanGuaranteeFeeTerms.get(i).getMonth());
+                    p.setLoanTerm(alLoanGuaranteeFeeTerms.get(i).getMonth());
                     p.setRepayDate(tAlLoanContract.getFirstRepayDate().plusMonths(i));
                     p.setGraceDate(p.getRepayDate().plusDays(tAlLoanContract.getGraceDay()));
                     p.setCompensationDate(p.getRepayDate().plusDays(tAlLoanContract.getCompensationDay()));
