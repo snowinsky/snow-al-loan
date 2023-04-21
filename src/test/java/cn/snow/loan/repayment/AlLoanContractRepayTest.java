@@ -2,6 +2,8 @@ package cn.snow.loan.repayment;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -50,6 +52,8 @@ public class AlLoanContractRepayTest {
 
     @Test
     public void preRepayTrail() {
+        List l = tested.preRepayTrail("ALF716351448965700", LocalDateTime.of(2022, 3, 9, 11, 12));
+        l.stream().forEach(System.out::println);
     }
 
     @Test

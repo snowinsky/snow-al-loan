@@ -33,17 +33,22 @@ public class TAlLoanContract implements Serializable {
     private BigDecimal yearRate;
 
     /**
-     * 违约金日利率，百分号前面的部分
+     * 罚息日利率
+     */
+    private BigDecimal overdueFeeRate;
+
+    /**
+     * 违约金日利率
      */
     private BigDecimal breachFeeRate;
 
     /**
-     * 期款滞纳金日利率，百分号前面的部分
+     * 期款滞纳金日利率
      */
     private BigDecimal termLateFeeRate;
 
     /**
-     * 整笔贷款滞纳金日利率，百分号前面的部分
+     * 整笔贷款滞纳金日利率
      */
     private BigDecimal loanLateFeeRate;
 
@@ -72,24 +77,6 @@ public class TAlLoanContract implements Serializable {
      */
     @Column
     private LocalDateTime firstRepayDate;
-
-    /**
-     * 整笔代偿日
-     */
-    @Column
-    private LocalDateTime compensationDate;
-
-    /**
-     * 整笔贷款滞纳金
-     */
-    @Column
-    private BigDecimal loanLateFee;
-
-    /**
-     * 上一次还款日
-     */
-    @Column
-    private LocalDateTime lastRepayDate;
 
     private static final long serialVersionUID = 1L;
 }

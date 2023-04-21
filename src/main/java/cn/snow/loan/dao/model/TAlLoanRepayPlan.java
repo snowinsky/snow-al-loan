@@ -3,6 +3,7 @@ package cn.snow.loan.dao.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.StringJoiner;
 
 import com.github.braisdom.objsql.annotations.Column;
 import com.github.braisdom.objsql.annotations.DomainModel;
@@ -46,17 +47,22 @@ public class TAlLoanRepayPlan implements Serializable {
     private LocalDateTime compensationDate;
 
     /**
-     * 违约金日利率，百分号前面的部分
+     * 罚息日利率
+     */
+    private BigDecimal overdueFeeRate;
+
+    /**
+     * 违约金日利率
      */
     private BigDecimal breachFeeRate;
 
     /**
-     * 期款滞纳金日利率，百分号前面的部分
+     * 期款滞纳金日利率
      */
     private BigDecimal termLateFeeRate;
 
     /**
-     * 整笔贷款滞纳金日利率，百分号前面的部分
+     * 整笔贷款滞纳金日利率
      */
     private BigDecimal loanLateFeeRate;
 
@@ -101,5 +107,79 @@ public class TAlLoanRepayPlan implements Serializable {
      */
     private String loanTermStatus;
 
+    /**
+     * 本金
+     */
+    private BigDecimal compPrincipal;
+
+    /**
+     * 利息
+     */
+    private BigDecimal compInterest;
+
+    /**
+     * 罚息
+     */
+    private BigDecimal compOverdueFee;
+
+    /**
+     * 整笔代偿日
+     */
+    @Column
+    private LocalDateTime compLoanDate;
+
+    /**
+     * 代偿担保费
+     */
+    private BigDecimal compGuaranteeFee;
+
+    /**
+     * 代偿违约金
+     */
+    private BigDecimal compBreachFee;
+
+    /**
+     * 代偿整笔金额
+     */
+    private BigDecimal compAmt;
+
+    /**
+     * 整笔贷款滞纳金
+     */
+    @Column
+    private BigDecimal loanLateFee;
+
     private static final long serialVersionUID = 1L;
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", TAlLoanRepayPlan.class.getSimpleName() + "[", "]")
+                .add("id=" + id)
+                .add("contractNo='" + contractNo + "'")
+                .add("loanTerm=" + loanTerm)
+                .add("repayDate=" + repayDate)
+                .add("graceDate=" + graceDate)
+                .add("compensationDate=" + compensationDate)
+                .add("overdueFeeRate=" + overdueFeeRate)
+                .add("breachFeeRate=" + breachFeeRate)
+                .add("termLateFeeRate=" + termLateFeeRate)
+                .add("loanLateFeeRate=" + loanLateFeeRate)
+                .add("principal=" + principal)
+                .add("interest=" + interest)
+                .add("overdueFee=" + overdueFee)
+                .add("guaranteeFee=" + guaranteeFee)
+                .add("breachFee=" + breachFee)
+                .add("termLateFee=" + termLateFee)
+                .add("lastRepayDate=" + lastRepayDate)
+                .add("loanTermStatus='" + loanTermStatus + "'")
+                .add("compPrincipal=" + compPrincipal)
+                .add("compInterest=" + compInterest)
+                .add("compOverdueFee=" + compOverdueFee)
+                .add("compLoanDate=" + compLoanDate)
+                .add("compGuaranteeFee=" + compGuaranteeFee)
+                .add("compBreachFee=" + compBreachFee)
+                .add("compAmt=" + compAmt)
+                .add("loanLateFee=" + loanLateFee)
+                .toString();
+    }
 }
