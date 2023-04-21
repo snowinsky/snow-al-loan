@@ -19,6 +19,8 @@ public class AlLoanContract implements ILoanContract {
 
     private final FundingLoanContract loanContract;
     private final AlLoanRate alLoanRate;
+    private String contractNo;
+    private int dayOfCompensation;
 
     private AlLoanContract() {
         throw new UnsupportedOperationException("");
@@ -27,12 +29,25 @@ public class AlLoanContract implements ILoanContract {
     public AlLoanContract(FundingLoanContract loanContract, AlLoanRate alLoanRate) {
         this.loanContract = loanContract;
         this.alLoanRate = alLoanRate;
+        dayOfCompensation = 10;
     }
 
+    public FundingLoanContract getFundingLoanContract() {
+        return loanContract;
+    }
+
+    public AlLoanRate alLoanRate() {
+        return alLoanRate;
+    }
 
     @Override
     public String contractNo() {
-        return null;
+        return contractNo;
+    }
+
+    @Override
+    public void contractNo(String contractNo) {
+        this.contractNo = contractNo;
     }
 
     @Override
@@ -82,7 +97,7 @@ public class AlLoanContract implements ILoanContract {
 
     @Override
     public LoanRate getLoanRate() {
-        return this.alLoanRate.getYearRate();
+        return alLoanRate.getYearRate();
     }
 
     @Override
@@ -92,12 +107,12 @@ public class AlLoanContract implements ILoanContract {
 
     @Override
     public int repayDay() {
-        return loanContract.repayDay() - 1;
+        return loanContract.repayDay();
     }
 
     @Override
     public LocalDate firstRepayDate() {
-        return loanContract.firstRepayDate().minusDays(1);
+        return loanContract.firstRepayDate();
     }
 
     @Override
@@ -105,8 +120,11 @@ public class AlLoanContract implements ILoanContract {
         return loanContract.dayOfGrace();
     }
 
-    @Override
     public int dayOfCompensation() {
-        return loanContract.dayOfCompensation();
+        return dayOfCompensation;
+    }
+
+    public void dayOfCompensation(int dayOfCompensation) {
+        this.dayOfCompensation = dayOfCompensation;
     }
 }

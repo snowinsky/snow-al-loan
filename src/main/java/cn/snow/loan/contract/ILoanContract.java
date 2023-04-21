@@ -12,6 +12,8 @@ public interface ILoanContract {
 
     String contractNo();
 
+    void contractNo(String contractNo);
+
     Loan repayPlanTrial();
 
     ILoanCalculator getLoanPlanCalculator();
@@ -27,7 +29,5 @@ public interface ILoanContract {
     LocalDate firstRepayDate();
 
     int dayOfGrace();
-
-    int dayOfCompensation();
 
 }

@@ -17,29 +17,36 @@ public class FundingLoanContract implements ILoanContract {
     private final LoanAmount loanAmount;
     private final LoanRate loanRate;
     private final LoanTerm loanTerm;
+    private final LoanRate overdueFeeRate;
 
     private int repayDay;
     private LocalDate firstRepayDate;
     private int dayOfGrace;
-    private int dayOfCompensation;
 
     private FundingLoanContract() {
         throw new UnsupportedOperationException("");
     }
 
-    public FundingLoanContract(LoanAmount loanAmount, LoanTerm loanTerm, LoanRate loanRate) {
+    public FundingLoanContract(LoanAmount loanAmount, LoanTerm loanTerm, LoanRate loanRate, LoanRate overdueFeeRate) {
         this.loanAmount = loanAmount;
         this.loanRate = loanRate;
         this.loanTerm = loanTerm;
-        this.repayDay = 3;
-        this.dayOfCompensation = 10;
-        this.dayOfGrace = 5;
-        this.firstRepayDate = LocalDate.of(2022, 1, repayDay());
+        this.overdueFeeRate = overdueFeeRate;
+        repayDay = 3;
+        dayOfGrace = 5;
+        firstRepayDate = LocalDate.of(2022, 1, repayDay());
     }
+
+    private String contractNo;
 
     @Override
     public String contractNo() {
-        return null;
+        return contractNo;
+    }
+
+    @Override
+    public void contractNo(String contractNo) {
+        this.contractNo = contractNo;
     }
 
     @Override
@@ -69,23 +76,19 @@ public class FundingLoanContract implements ILoanContract {
 
     @Override
     public int repayDay() {
-        return this.repayDay;
+        return repayDay;
     }
 
     @Override
     public LocalDate firstRepayDate() {
-        return this.firstRepayDate.with(ChronoField.DAY_OF_MONTH, this.repayDay);
+        return firstRepayDate.with(ChronoField.DAY_OF_MONTH, repayDay);
     }
 
     @Override
     public int dayOfGrace() {
-        return this.dayOfGrace;
+        return dayOfGrace;
     }
 
-    @Override
-    public int dayOfCompensation() {
-        return this.dayOfCompensation;
-    }
 
     public void setRepayDay(int repayDay) {
         this.repayDay = repayDay;
@@ -99,8 +102,8 @@ public class FundingLoanContract implements ILoanContract {
         this.dayOfGrace = dayOfGrace;
     }
 
-    public void setDayOfCompensation(int dayOfCompensation) {
-        this.dayOfCompensation = dayOfCompensation;
+    public LoanRate overdueFeeRate(){
+        return overdueFeeRate;
     }
 
 }

@@ -25,18 +25,19 @@ public class FundingLoanContractRepayTest {
 
         FundingLoanContract contract = new FundingLoanContract(LoanAmount.valueOf(new BigDecimal("12000")),
                 LoanTerm.monthTerm(12),
-                LoanRate.yearRate(8.2));
+                LoanRate.yearRateBeforePercent(8.2),
+                LoanRate.yearRateBeforePercent(8.2));
+        contract.contractNo("F" + System.nanoTime());
         contract.setRepayDay(4);
         contract.setDayOfGrace(3);
-        contract.setDayOfCompensation(9);
-        contract.setFirstRepayDate(LocalDate.of(2022,1,1));
+        contract.setFirstRepayDate(LocalDate.of(2022, 1, 1));
         tested.initRepayPlan(contract);
     }
 
     @Test
     public void testRepayTrail() throws SQLException {
         DbHandler.INIT.initMySqlConnectionFactory();
-        List l = tested.preRepayTrail("F645978586742000", LocalDateTime.of(2022,3,9, 11,12));
+        List l = tested.preRepayTrail("F645978586742000", LocalDateTime.of(2022, 3, 9, 11, 12));
         l.stream().forEach(System.out::println);
     }
 
@@ -45,7 +46,7 @@ public class FundingLoanContractRepayTest {
         DbHandler.INIT.initMySqlConnectionFactory();
 
         String contractNo = "F645978586742000";
-        LocalDateTime repayDateTime = LocalDateTime.of(2022,3,8, 11,12);
+        LocalDateTime repayDateTime = LocalDateTime.of(2022, 3, 8, 11, 12);
 
         List l = tested.preRepayTrail(contractNo, repayDateTime);
         l.stream().forEach(System.out::println);

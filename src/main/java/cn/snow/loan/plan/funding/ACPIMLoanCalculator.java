@@ -18,7 +18,7 @@ public class ACPIMLoanCalculator implements ILoanCalculator {
     public Loan calLoan(BigDecimal totalLoanMoney, int totalMonth, double loanRate, int rateType) {
         Loan loan = new Loan();
         //月利率，就是年利率除以12
-        BigDecimal loanRateMonth = LoanRate.yearRate(loanRate).getMonthRate();
+        BigDecimal loanRateMonth = LoanRate.yearRateBeforePercent(loanRate).getMonthRate();
         //获取公式中的(1+月利率)^还款月数
         BigDecimal factor = BigDecimal.valueOf(1 + loanRateMonth.doubleValue()).pow(totalMonth);
         //月平均还款额

@@ -23,7 +23,7 @@ public interface ILoanCalculator {
     Loan calLoan(BigDecimal totalLoanMoney, int totalMonth, double loanRate, int rateType);
 
     default Loan repaymentPlan(LoanAmount loanAmount, LoanTerm loanTerm, LoanRate loanRate){
-        return calLoan(loanAmount.getLoanAmountYuan(), loanTerm.getTerm(), loanRate.getYearRateBeforePercent(), LoanRate.RATE_TYPE_YEAR);
+        return calLoan(loanAmount.getLoanAmountYuan(), loanTerm.getTerm(), loanRate.getYearRateBeforePercent().doubleValue(), LoanRate.RATE_TYPE_YEAR);
     }
 
 }

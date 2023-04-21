@@ -17,6 +17,7 @@ public class AlLoanContractTest {
         AlLoanContract alLoanContract = new AlLoanContract(new FundingLoanContract(
                 LoanAmount.valueOf(new BigDecimal("12000")),
                 LoanTerm.monthTerm(12),
+                LoanRate.yearRate(8.2),
                 LoanRate.yearRate(8.2)
         ), new AlLoanRate(LoanRate.yearRate(23.9)));
         Loan loan = alLoanContract.repayPlanTrial();

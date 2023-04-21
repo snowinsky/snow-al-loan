@@ -9,6 +9,10 @@ public class Result {
         this.returnMsg = returnMsg;
     }
 
+    public boolean success() {
+        return returnCode == 0;
+    }
+
     public static Result success(String returnMsg) {
         return new Result(0, returnMsg);
     }

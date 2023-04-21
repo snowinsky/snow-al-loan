@@ -31,9 +31,9 @@ public class FundingLoanContractRepay implements ILoanContractRepay {
                 FundingLoanContract fundingLoanContract = (FundingLoanContract) contract;
                 TFundingLoanContract tFundingLoanContract = new TFundingLoanContract();
                 //tFundingLoanContract.setId(System.nanoTime());
-                tFundingLoanContract.setContractNo("F" + System.nanoTime());
-                tFundingLoanContract.setYearRate(fundingLoanContract.getLoanRate().getYearRate());
-                tFundingLoanContract.setOverdueFeeRate(fundingLoanContract.getLoanRate().getOverdueFeeDayRate());
+                tFundingLoanContract.setContractNo(fundingLoanContract.contractNo());
+                tFundingLoanContract.setYearRate(fundingLoanContract.getLoanRate().getYearRateBeforePercent());
+                tFundingLoanContract.setOverdueFeeRate(fundingLoanContract.overdueFeeRate().getDayRateBeforePercent());
                 tFundingLoanContract.setRepayDay(fundingLoanContract.repayDay());
                 tFundingLoanContract.setGraceDay(fundingLoanContract.dayOfGrace());
                 tFundingLoanContract.setLoanTerm(fundingLoanContract.getLoanTerm().getTerm());
@@ -85,7 +85,7 @@ public class FundingLoanContractRepay implements ILoanContractRepay {
                 env.put("daysOfOverdue", daysOfOverdueFee);
                 env.put("overdueFee", b.getOverdueFee());
 
-                b.setOverdueFee((BigDecimal) AviatorEvaluator.execute("overdueFee+(principal*overdueFeeRate*daysOfOverdue)", env));
+                b.setOverdueFee((BigDecimal) AviatorEvaluator.execute("overdueFee+(principal*overdueFeeRate/100*daysOfOverdue)", env));
             }
         }).collect(Collectors.toList());
     }

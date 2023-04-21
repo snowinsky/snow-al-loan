@@ -17,7 +17,7 @@ public class ACMLoanCalculator implements ILoanCalculator {
     public Loan calLoan(BigDecimal totalLoanMoney, int totalMonth, double loanRate, int rateType) {
         Loan loan = new Loan();
         //月利率=年利率除以12
-        BigDecimal loanRateMonth = rateType == LoanRate.RATE_TYPE_YEAR ? BigDecimal.valueOf(loanRate / 100 / 12) : BigDecimal.valueOf(loanRate / 100);
+        BigDecimal loanRateMonth = LoanRate.yearRateBeforePercent(loanRate).getMonthRate();
         loan.setTotalMonth(totalMonth);
         loan.setTotalLoanMoney(totalLoanMoney);
         //每月还款本金数是固定的，贷款总额/贷款期数
