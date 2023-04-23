@@ -85,7 +85,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                     p.setTermLateFee(BigDecimal.ZERO);
                     p.setLastRepayDate(p.getRepayDate());
                     p.setOverdueFlag(0);
-                    p.setLoanTermStatus("u");
+                    p.setLoanTermStatus("n");
                     p.setCompPrincipal(BigDecimal.ZERO);
                     p.setCompInterest(BigDecimal.ZERO);
                     p.setCompOverdueFee(BigDecimal.ZERO);
@@ -345,6 +345,9 @@ public class AlLoanContractRepay implements ILoanContractRepay {
     public Result loanCompensation(String contractNo, LocalDateTime compensationDateTime) {
         try {
             List<TAlLoanRepayPlan> allSs = TAlLoanRepayPlan.query("contract_no = ?", contractNo);
+            if (isWholeLoanCompensation(allSs)) {
+                return Result.success("whole loan compensation already complete");
+            }
             List<TAlLoanRepayPlan> ss = preRepayTrail(contractNo, compensationDateTime);
             List<TAlLoanRepayPlan> mergeSs = mergeAlLoanRepayPlan(allSs, ss);
             for (TAlLoanRepayPlan s : mergeSs) {
@@ -354,7 +357,6 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                         compensationDateTime
                 ).toDays();
                 switch (loanTermStatus) {
-                    case "u":
                     case "n":
                         s.setLoanTermStatus("l");
                         s.setCompLoanDate(compensationDateTime);
@@ -375,8 +377,6 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                         s.setOverdueFee(BigDecimal.ZERO);
                         s.setGuaranteeFee(BigDecimal.ZERO);
                         TAlLoanRepayPlan.update(s.getId(), s, true);
-                        break;
-                    case "c":
                         break;
                     case "t":
                         s.setLoanTermStatus("l");
