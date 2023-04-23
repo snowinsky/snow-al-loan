@@ -52,7 +52,7 @@ public class AlLoanContractRepayTest {
 
     @Test
     public void preRepayTrail() {
-        List l = tested.preRepayTrail("ALF716351448965700", LocalDateTime.of(2022, 3, 9, 11, 12));
+        List l = tested.preRepayTrail("ALF886477923969800", LocalDateTime.of(2022, 3, 9, 11, 12));
         l.stream().forEach(System.out::println);
     }
 

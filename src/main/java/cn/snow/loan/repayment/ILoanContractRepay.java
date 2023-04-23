@@ -11,6 +11,8 @@ public interface ILoanContractRepay {
 
     Result initRepayPlan(ILoanContract contract);
 
+    Result setOverdueFlag(String contractNo, LocalDateTime checkDateTime);
+
     List<?> preRepayTrail(String contractNo, LocalDateTime repayDateTime);
 
     Result repay(String contractNo, LocalDateTime repayDateTime, BigDecimal repayAmount);

@@ -20,6 +20,13 @@
             <artifactId>objective-sql</artifactId>
             <version>1.4.6</version>
         </dependency>
+        <!-- mysql数据库驱动 -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.26</version>
+            <scope>runtime</scope>
+        </dependency>
         <!-- 计算比较多，写公式的 -->
         <dependency>
             <groupId>com.googlecode.aviator</groupId>
@@ -33,13 +40,7 @@
             <version>1.18.24</version>
             <scope>provided</scope>
         </dependency>
-        <!-- mysql数据库驱动 -->
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.26</version>
-            <scope>runtime</scope>
-        </dependency>
+
         <!-- 单元测试 -->
         <dependency>
             <groupId>junit</groupId>

@@ -103,6 +103,11 @@ public class TAlLoanRepayPlan implements Serializable {
     private LocalDateTime lastRepayDate;
 
     /**
+     * 是否逾期 1.逾期 0.不逾期
+     */
+    private Integer overdueFlag;
+
+    /**
      * n=normal, o=overdue, c=close, t=term compensation, l=loan compensation
      */
     private String loanTermStatus;
@@ -123,10 +128,21 @@ public class TAlLoanRepayPlan implements Serializable {
     private BigDecimal compOverdueFee;
 
     /**
-     * 整笔代偿日
+     * 整笔代偿具体时间
      */
     @Column
     private LocalDateTime compLoanDate;
+
+    /**
+     * 当期代偿具体时间
+     */
+    @Column
+    private LocalDateTime compTermDate;
+
+    /**
+     * 代偿期款滞纳金
+     */
+    private BigDecimal compTermLateFee;
 
     /**
      * 代偿担保费
@@ -171,11 +187,14 @@ public class TAlLoanRepayPlan implements Serializable {
                 .add("breachFee=" + breachFee)
                 .add("termLateFee=" + termLateFee)
                 .add("lastRepayDate=" + lastRepayDate)
+                .add("overdueFlag=" + overdueFlag)
                 .add("loanTermStatus='" + loanTermStatus + "'")
                 .add("compPrincipal=" + compPrincipal)
                 .add("compInterest=" + compInterest)
                 .add("compOverdueFee=" + compOverdueFee)
                 .add("compLoanDate=" + compLoanDate)
+                .add("compTermDate=" + compTermDate)
+                .add("compTermLateFee=" + compTermLateFee)
                 .add("compGuaranteeFee=" + compGuaranteeFee)
                 .add("compBreachFee=" + compBreachFee)
                 .add("compAmt=" + compAmt)

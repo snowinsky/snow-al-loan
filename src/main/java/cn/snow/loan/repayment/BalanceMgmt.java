@@ -38,8 +38,12 @@ public class BalanceMgmt {
             this.balance = balance;
         }
 
-        public boolean isSufficient() {
+        public boolean sufficient() {
             return sufficient;
+        }
+
+        public boolean insufficient(){
+            return !sufficient;
         }
 
         public void setSufficient(boolean sufficient) {

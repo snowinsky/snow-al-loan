@@ -64,6 +64,11 @@ public class FundingLoanContractRepay implements ILoanContractRepay {
     }
 
     @Override
+    public Result setOverdueFlag(String contractNo, LocalDateTime checkDateTime) {
+        throw new UnsupportedOperationException("no overdue flag");
+    }
+
+    @Override
     public List<TFundingLoanRepayPlan> preRepayTrail(String contractNo, LocalDateTime repayDateTime) {
 
         List<TFundingLoanRepayPlan> ss = Collections.emptyList();
