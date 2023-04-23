@@ -36,7 +36,7 @@ public class AlLoanContractRepayTest {
         contract.contractNo("F" + System.nanoTime());
         contract.setRepayDay(4);
         contract.setDayOfGrace(3);
-        contract.setFirstRepayDate(LocalDate.of(2022,1,1));
+        contract.setFirstRepayDate(LocalDate.of(2022, 1, 1));
 
         AlLoanRate alLoanRate = new AlLoanRate(LoanRate.yearRateBeforePercent(23.9));
         alLoanRate.setBreachFeeRate(LoanRate.dayRateBeforePercent(0.062));
@@ -52,19 +52,26 @@ public class AlLoanContractRepayTest {
 
     @Test
     public void preRepayTrail() {
-        List l = tested.preRepayTrail("ALF886477923969800", LocalDateTime.of(2022, 3, 9, 11, 12));
+        List l = tested.preRepayTrail("ALF888439983062600", LocalDateTime.of(2022, 3, 15, 11, 12));
         l.stream().forEach(System.out::println);
     }
 
     @Test
     public void repay() {
+        tested.repay("ALF886477923969800",
+                LocalDateTime.of(2022, 3, 9, 11, 12),
+                new BigDecimal("0"));
     }
 
     @Test
     public void termCompensation() {
+        tested.termCompensation("ALF888439983062600",
+                LoanTerm.monthTerm(2),
+                LocalDateTime.of(2022, 2, 14, 11, 12));
     }
 
     @Test
     public void loanCompensation() {
+        tested.loanCompensation("ALF888439983062600", LocalDateTime.of(2022, 3, 14, 11, 12));
     }
 }

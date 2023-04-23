@@ -86,7 +86,7 @@ CREATE TABLE t_al_Loan_repay_plan
     term_late_fee      DECIMAL(20, 2) NOT NULL DEFAULT '0' COMMENT '期款滞纳金',
     last_repay_date    DATETIME       NOT NULL COMMENT '上一次的还款时间',
     overdue_flag       TINYINT        NOT NULL default '0' COMMENT '是否逾期 1.逾期 0.不逾期',
-    loan_term_status   VARCHAR(5)     NOT NULL DEFAULT 'u' COMMENT 'u=unrepay,n=normal, o=overdue, c=close, t=term compensation, l=loan compensation',
+    loan_term_status   VARCHAR(5)     NOT NULL DEFAULT 'u' COMMENT 'n=normal, t=term compensation, l=loan compensation',
     comp_principal     DECIMAL(20, 2) NOT NULL DEFAULT '0' COMMENT '代偿本金',
     comp_interest      DECIMAL(20, 2) NOT NULL DEFAULT '0' COMMENT '代偿利息',
     comp_overdue_fee   DECIMAL(20, 2) NOT NULL DEFAULT '0' COMMENT '代偿罚息',
