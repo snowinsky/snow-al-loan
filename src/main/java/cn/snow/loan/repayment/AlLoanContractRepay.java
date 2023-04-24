@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,19 +17,25 @@ import java.util.stream.Collectors;
 
 import com.github.braisdom.objsql.Databases;
 import com.googlecode.aviator.AviatorEvaluator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.snow.loan.contract.AlLoanContract;
 import cn.snow.loan.contract.FundingLoanContract;
 import cn.snow.loan.contract.ILoanContract;
 import cn.snow.loan.dao.model.TAlLoanContract;
 import cn.snow.loan.dao.model.TAlLoanRepayPlan;
+import cn.snow.loan.dao.model.TRepayHistory;
 import cn.snow.loan.plan.al.AlLoan;
 import cn.snow.loan.plan.al.GuaranteeFeePerTerm;
 import cn.snow.loan.plan.funding.LoanPerTerm;
 import cn.snow.loan.plan.funding.prepare.LoanTerm;
 import cn.snow.loan.repayment.BalanceMgmt.ConsumeResult;
+import cn.snow.loan.utils.JsonUtil;
 
 public class AlLoanContractRepay implements ILoanContractRepay {
+
+    private static final Logger log = LoggerFactory.getLogger(AlLoanContractRepay.class);
 
     @Override
     public Result initRepayPlan(ILoanContract contract) {
@@ -102,6 +110,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
             long durationDay = Duration.between(s.getRepayDate(), checkDateTime).toDays();
             if (s.getOverdueFlag() == 0 && durationDay > 0 && s.getPrincipal().compareTo(BigDecimal.ZERO) > 0) {
                 s.setOverdueFlag(1);
+                log.info("contractNo={} set overdueflag=1 at {}", contractNo, checkDateTime);
                 try {
                     TAlLoanRepayPlan.update(s.getId(), s, true);
                 } catch (SQLException e) {
@@ -114,7 +123,11 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     private List<TAlLoanRepayPlan> queryAllRepayPlanByContractNo(String contractNo) {
         try {
-            return TAlLoanRepayPlan.query("contract_no = ?", contractNo);
+            List<TAlLoanRepayPlan> l = TAlLoanRepayPlan.query("contract_no = ?", contractNo);
+            if(l == null || l.isEmpty()){
+                return Collections.emptyList();
+            }
+            return l.stream().sorted(Comparator.comparing(TAlLoanRepayPlan::getLoanTerm)).collect(Collectors.toList());
         } catch (SQLException e) {
             throw new IllegalStateException("query all replay plan by contractNo fail", e);
         }
@@ -122,6 +135,24 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     @Override
     public List<TAlLoanRepayPlan> preRepayTrail(String contractNo, LocalDateTime repayDateTime) {
+        List<TAlLoanRepayPlan> l = preRepayTrailCore(contractNo, repayDateTime)
+                .stream().sorted(Comparator.comparing(TAlLoanRepayPlan::getLoanTerm)).collect(Collectors.toList());
+        TRepayHistory h = new TRepayHistory();
+        h.setAlContractNo(contractNo);
+        h.setRepayType(1);
+        h.setAmount(new BigDecimal("0"));
+        h.setRepayDate(LocalDateTime.now());
+        h.setPairDetail(JsonUtil.toJson(l));
+        h.setComments("");
+        try {
+            TRepayHistory.create(h, true);
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+        return l;
+    }
+
+    private List<TAlLoanRepayPlan> preRepayTrailCore(String contractNo, LocalDateTime repayDateTime) {
         setOverdueFlag(contractNo, repayDateTime);
         List<TAlLoanRepayPlan> ss = queryAllRepayPlanByContractNo(contractNo);
         if (isWholeLoanCompensation(ss)) {
@@ -196,7 +227,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
      * @return
      */
     private BigDecimal getOverdueFeeBalance(Map<String, Object> env) {
-        Object r = AviatorEvaluator.compile("overdueFee+scale(principal*overdueFeeRate/100*daysOfOverdue, 2, 4)", true).execute(env);
+        Object r = AviatorEvaluator.compile("overdueFee+principal*overdueFeeRate/100*daysOfOverdue", true).execute(env);
         return (BigDecimal) r;
     }
 
@@ -359,11 +390,13 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                         env.put("overdueFeeRate", s.getOverdueFeeRate());
                         env.put("overdueFee", s.getOverdueFee());
                         s.setCompOverdueFee((BigDecimal) AviatorEvaluator.compile("overdueFee+(overdueFeePrincipal*overdueFeeRate/100*daysOfTermLateFee)", true).execute(env));
-
+                        s.setCompBreachFee(s.getBreachFee());
                         s.setCompGuaranteeFee(s.getGuaranteeFee());
+
                         s.setPrincipal(BigDecimal.ZERO);
                         s.setInterest(BigDecimal.ZERO);
                         s.setOverdueFee(BigDecimal.ZERO);
+                        s.setBreachFee(BigDecimal.ZERO);
                         s.setGuaranteeFee(BigDecimal.ZERO);
                         TAlLoanRepayPlan.update(s.getId(), s, true);
                         break;
