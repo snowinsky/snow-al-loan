@@ -117,4 +117,19 @@ public class AlLoanContractRepayTest {
     public void loanCompensation() {
         tested.loanCompensation("ALF964435947359300", LocalDateTime.of(2023, 3, 22, 11, 12));
     }
+
+    @Test
+    public void testGoThroughAllLoan(){
+        //initRepayPlan();
+        /*tested.repay("ALF981908177209100",
+                LocalDateTime.of(2022, 9, 12, 11, 12),
+                new BigDecimal("1134.13"));
+        tested.repay("ALF981908177209100",
+                LocalDateTime.of(2022, 10, 17, 11, 12),
+                new BigDecimal("1134.13"));*/
+
+        tested.repay("ALF981908177209100",
+                LocalDateTime.of(2022, 11, 18, 11, 12),
+                new BigDecimal("1139.11"));
+    }
 }

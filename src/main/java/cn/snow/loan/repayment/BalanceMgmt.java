@@ -3,7 +3,12 @@ package cn.snow.loan.repayment;
 import java.math.BigDecimal;
 import java.util.StringJoiner;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BalanceMgmt {
+
+    private static final Logger log = LoggerFactory.getLogger(BalanceMgmt.class);
 
     private BigDecimal balance;
 
@@ -12,10 +17,13 @@ public class BalanceMgmt {
     }
 
     public ConsumeResult consumeBalance(BigDecimal amt) {
+        BigDecimal preBalance = new BigDecimal(balance.toString());
         balance = balance.subtract(amt);
-        if (balance.compareTo(BigDecimal.ZERO) >= 0) {
+        if (balance.compareTo(BigDecimal.ZERO) > 0) {
+            log.info("还款：preBalance={}, spendAmt={}, endBalance={}", preBalance, amt, balance);
             return sufficient(BigDecimal.ZERO);
         } else {
+            log.info("还款：preBalance={}, spendAmt={}, endBalance={}", preBalance, amt, 0);
             return insufficient(new BigDecimal("-1").multiply(balance));
         }
     }
