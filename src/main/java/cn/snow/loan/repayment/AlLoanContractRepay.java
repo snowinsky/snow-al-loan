@@ -29,22 +29,12 @@ import cn.snow.loan.repayment.BalanceMgmt.ConsumeResult;
 
 public class AlLoanContractRepay implements ILoanContractRepay {
 
-    private final FundingLoanContractRepay fundingLoanContractRepay;
-
-    public AlLoanContractRepay(FundingLoanContractRepay fundingLoanContractRepay) {
-        this.fundingLoanContractRepay = fundingLoanContractRepay;
-    }
-
     @Override
     public Result initRepayPlan(ILoanContract contract) {
         try {
             return Databases.executeTransactionally((connection, sqlExecutor) -> {
                 AlLoanContract alLoanContract = (AlLoanContract) contract;
                 FundingLoanContract fundingLoanContract = alLoanContract.getFundingLoanContract();
-                Result r = fundingLoanContractRepay.initRepayPlan(fundingLoanContract);
-                if (!r.success()) {
-                    throw new IllegalStateException("init funding loan contract fail");
-                }
                 TAlLoanContract tAlLoanContract = Optional.of(alLoanContract).map(a -> {
                     TAlLoanContract c = new TAlLoanContract();
                     c.setContractNo(alLoanContract.contractNo());

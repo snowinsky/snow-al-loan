@@ -1,16 +1,20 @@
 package cn.snow.loan.repayment;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.snow.loan.contract.AlLoanContract;
 import cn.snow.loan.contract.FundingLoanContract;
 import cn.snow.loan.dao.DbHandler;
+import cn.snow.loan.dao.model.TRepayHistory;
 import cn.snow.loan.plan.al.prepare.AlLoanRate;
 import cn.snow.loan.plan.funding.prepare.LoanAmount;
 import cn.snow.loan.plan.funding.prepare.LoanRate;
@@ -18,13 +22,28 @@ import cn.snow.loan.plan.funding.prepare.LoanTerm;
 
 public class AlLoanContractRepayTest {
 
+    Logger log = LoggerFactory.getLogger(AlLoanContractRepayTest.class);
+
     AlLoanContractRepay tested;
 
     @Before
     public void setUp() throws Exception {
         DbHandler.INIT.initMySqlConnectionFactory();
 
-        tested = new AlLoanContractRepay(new FundingLoanContractRepay());
+        tested = new AlLoanContractRepay();
+    }
+
+    @Test
+    public void testJsonInMySql() throws SQLException {
+        log.info("sdfsdfsdf{}", "asdfa");
+        TRepayHistory h = new TRepayHistory();
+        h.setAlContractNo("qwrqrqwrwq");
+        h.setRepayType(1);
+        h.setAmount(new BigDecimal("0"));
+        h.setRepayDate(LocalDateTime.now());
+        h.setPairDetail("{\"sdf\":\"123\"}");
+        h.setComments("");
+        TRepayHistory.create(h, true);
     }
 
     @Test
