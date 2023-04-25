@@ -144,11 +144,11 @@ public class AlLoanContractRepayTest {
                 new BigDecimal("1134.13"));
 
         //宽限期内还款未结清
-        /*tested.repay(contractNo,
+        tested.repay(contractNo,
                 LocalDateTime.of(2023, 1, 14, 11, 12),
-                new BigDecimal("300"));*/
+                new BigDecimal("300"));
         //逾期还款未结清
-        /*tested.repay(contractNo,
+        tested.repay(contractNo,
                 LocalDateTime.of(2023, 1, 19, 11, 12),
                 new BigDecimal("200"));
         //当期代偿
@@ -159,7 +159,7 @@ public class AlLoanContractRepayTest {
         //逾期还款未结清
         tested.repay(contractNo,
                 LocalDateTime.of(2023, 2, 18, 11, 12),
-                new BigDecimal("200.01"));
+                new BigDecimal("200.00"));
         //当期代偿
         tested.termCompensation(contractNo,
                 LoanTerm.monthTerm(6),
@@ -169,6 +169,6 @@ public class AlLoanContractRepayTest {
                 LocalDateTime.of(2023, 3, 10, 11, 12),
                 new BigDecimal("1000"));
         //整笔代偿
-        tested.loanCompensation(contractNo, LocalDateTime.of(2023, 3, 22, 11, 12));*/
+        tested.loanCompensation(contractNo, LocalDateTime.of(2023, 3, 22, 11, 12));
     }
 }

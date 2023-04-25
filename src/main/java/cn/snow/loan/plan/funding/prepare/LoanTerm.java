@@ -1,5 +1,7 @@
 package cn.snow.loan.plan.funding.prepare;
 
+import java.util.StringJoiner;
+
 public class LoanTerm {
 
     private final int term;
@@ -11,7 +13,7 @@ public class LoanTerm {
 
     private LoanTerm(int term) {
         this.term = term;
-        this.termType = TERM_TYPE_MONTH;
+        termType = TERM_TYPE_MONTH;
     }
 
     public static LoanTerm monthTerm(int term) {
@@ -19,14 +21,21 @@ public class LoanTerm {
     }
 
     public int getTerm() {
-        return this.term;
+        return term;
     }
 
     public int getTermType() {
-        return this.termType;
+        return termType;
     }
 
     public static final int TERM_TYPE_MONTH = 100;
     public static final int TERM_TYPE_YEAR = 101;
     public static final int TERM_TYPE_WEEK = 102;
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", LoanTerm.class.getSimpleName() + "[", "]")
+                .add("term=" + term)
+                .toString();
+    }
 }

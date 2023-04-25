@@ -194,7 +194,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
             return ss.stream().peek(b -> {
                 //计算整笔贷款的贷款滞纳金
                 if (b.getCompLoanDate() != null) {
-                    long daysOfLoanLateFee = Duration.between(b.getCompLoanDate(), repayDateTime).toDays();
+                    long daysOfLoanLateFee = Duration.between(b.getLastRepayDate(), repayDateTime).toDays();
                     if (repayDateTime.isAfter(b.getCompLoanDate()) && daysOfLoanLateFee > 0) {
                         Map<String, Object> env = new HashMap<>();
                         env.put("compPrincipal", b.getCompPrincipal());
@@ -228,8 +228,8 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         return ss.stream().filter(a -> repayDateTime.isAfter(a.getRepayDate())).peek(b -> {
             //当期代偿之后才开始计算计算期款滞纳金
             if (b.getCompTermDate() != null) {
-                long daysOfTermLateFee = Duration.between(b.getCompTermDate(), repayDateTime).toDays();
-                if (repayDateTime.isAfter(b.getCompTermDate()) && daysOfTermLateFee > 0) {
+                long daysOfTermLateFee = Duration.between(b.getLastRepayDate(), repayDateTime).toDays();
+                if (repayDateTime.isAfter(b.getCompTermDate()) && daysOfTermLateFee > 0 && b.getCompPrincipal().compareTo(BigDecimal.ZERO) > 0) {
                     Map<String, Object> env = new HashMap<>();
                     env.put("compPrincipal", b.getCompPrincipal());
                     env.put("daysOfTermLateFee", daysOfTermLateFee);
@@ -285,7 +285,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     @Override
     public Result repay(String contractNo, LocalDateTime repayDateTime, BigDecimal repayAmount) {
-        log.info("客户还款，合同号={}，金额={}，时间={}", contractNo, repayAmount, repayDateTime);
+        log.info("###############客户还款，合同号={}，金额={}，时间={}", contractNo, repayAmount, repayDateTime);
         try {
             List<TAlLoanRepayPlan> ss = preRepayTrail(contractNo, repayDateTime);
             BalanceMgmt bm = new BalanceMgmt(repayAmount);
@@ -328,7 +328,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         cr = preBalance.consumeBalance(p.getPrincipal(), "本金");
         p.setPrincipal(cr.getBalance());
         if (p.getPrincipal().compareTo(BigDecimal.ZERO) <= 0) {
-            log.info("{}-{}:客户宽限期内还款[{}]结清，免罚息{}和违约金{}。", p.getContractNo(), p.getLoanTerm(), "本金", p.getOverdueFee(), p.getBreachFee());
+            log.info("{}-{}:客户宽限期内还款[{}]结清，免[罚息]{}和[违约金]{}。", p.getContractNo(), p.getLoanTerm(), "本金", p.getOverdueFee(), p.getBreachFee());
             p.setOverdueFee(BigDecimal.ZERO);
             p.setBreachFee(BigDecimal.ZERO);
         }
@@ -523,7 +523,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     @Override
     public Result termCompensation(String contractNo, LoanTerm term, LocalDateTime compensationDateTime) {
-        log.info("当期代偿，合同号={}，期次={}，时间={}", contractNo, term, compensationDateTime);
+        log.info("###############当期代偿，合同号={}，期次={}，时间={}", contractNo, term, compensationDateTime);
         List<TAlLoanRepayPlan> ss = preRepayTrail(contractNo, compensationDateTime);
         TAlLoanRepayPlan s = ss.stream().filter(a -> a.getLoanTerm().equals(term.getTerm())).findFirst().orElse(null);
         if (s == null) {
@@ -531,6 +531,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         try {
             s.setLoanTermStatus("t");
+            s.setLastRepayDate(compensationDateTime.truncatedTo(ChronoUnit.DAYS));
             s.setCompTermDate(compensationDateTime);
             s.setCompPrincipal(s.getPrincipal());
             s.setCompInterest(s.getInterest());
@@ -548,7 +549,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     @Override
     public Result loanCompensation(String contractNo, LocalDateTime compensationDateTime) {
-        log.info("整笔代偿，合同号={}，时间={}", contractNo, compensationDateTime);
+        log.info("###############整笔代偿，合同号={}，时间={}", contractNo, compensationDateTime);
         try {
             List<TAlLoanRepayPlan> allSs = queryAllRepayPlanByContractNo(contractNo);
             if (isWholeLoanCompensation(allSs)) {
@@ -558,6 +559,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
             List<TAlLoanRepayPlan> ss = preRepayTrail(contractNo, compensationDateTime);
             List<TAlLoanRepayPlan> mergeSs = mergeAlLoanRepayPlan(allSs, ss);
             for (TAlLoanRepayPlan s : mergeSs) {
+                s.setLastRepayDate(compensationDateTime.truncatedTo(ChronoUnit.DAYS));
                 String loanTermStatus = s.getLoanTermStatus();
                 long daysOfLoanCompensation = Duration.between(
                         LocalDateTime.of(compensationDateTime.toLocalDate().withDayOfMonth(s.getRepayDate().getDayOfMonth()), LocalTime.MIN),
@@ -616,8 +618,20 @@ public class AlLoanContractRepay implements ILoanContractRepay {
     }
 
     private List<TAlLoanRepayPlan> mergeAlLoanRepayPlan(List<TAlLoanRepayPlan> allRepayPlans, List<TAlLoanRepayPlan> repayRepayPlans) {
-        List<TAlLoanRepayPlan> l = new ArrayList<>(repayRepayPlans);
-        l.addAll(allRepayPlans.subList(repayRepayPlans.size(), allRepayPlans.size()));
+        List<TAlLoanRepayPlan> l = new ArrayList<>(allRepayPlans);
+        for (int i = 0; i < l.size(); i++) {
+            Integer term = l.get(i).getLoanTerm();
+            TAlLoanRepayPlan repayedTerm = null;
+            for (TAlLoanRepayPlan r : repayRepayPlans) {
+                if (r.getLoanTerm().equals(term)) {
+                    repayedTerm = r;
+                    break;
+                }
+            }
+            if (null != repayedTerm) {
+                l.set(i, repayedTerm);
+            }
+        }
         return l;
     }
 }
