@@ -559,12 +559,43 @@ public class AlLoanContractRepay implements ILoanContractRepay {
             List<TAlLoanRepayPlan> ss = preRepayTrail(contractNo, compensationDateTime);
             List<TAlLoanRepayPlan> mergeSs = mergeAlLoanRepayPlan(allSs, ss);
             for (TAlLoanRepayPlan s : mergeSs) {
+                if (s.getPrincipal().compareTo(BigDecimal.ZERO) == 0 && s.getCompPrincipal().compareTo(BigDecimal.ZERO) == 0) {
+                    s.setLoanTermStatus("l");
+                    s.setCompLoanDate(compensationDateTime);
+                    log.info("{}-{}:整笔代偿-已结清期次, 无需任何操作", contractNo, s.getLoanTerm());
+                    TAlLoanRepayPlan.update(s.getId(), s, true);
+                    continue;
+                }
                 s.setLastRepayDate(compensationDateTime.truncatedTo(ChronoUnit.DAYS));
                 String loanTermStatus = s.getLoanTermStatus();
                 long daysOfLoanCompensation = Duration.between(
                         LocalDateTime.of(compensationDateTime.toLocalDate().withDayOfMonth(s.getRepayDate().getDayOfMonth()), LocalTime.MIN),
                         compensationDateTime
                 ).toDays();
+
+                if (compensationDateTime.isBefore(s.getRepayDate())) {
+                    s.setLoanTermStatus("l");
+                    s.setCompLoanDate(compensationDateTime);
+                    s.setCompPrincipal(s.getPrincipal());
+                    Map<String, Object> env = new HashMap<>();
+                    env.put("principal", s.getPrincipal());
+                    env.put("daysOfInterest", daysOfLoanCompensation);
+                    env.put("overdueFeeRate", s.getOverdueFeeRate());
+                    BigDecimal interest = (BigDecimal) AviatorEvaluator.compile("scale(principal*overdueFeeRate/100*daysOfInterest)", true).execute(env);
+                    s.setCompInterest(interest);
+                    s.setCompOverdueFee(s.getOverdueFee());
+                    s.setCompGuaranteeFee(s.getGuaranteeFee());
+
+                    log.info("{}-{}:整笔代偿-未到期期次, 代偿本金{}，计提利息{}，担保费{}",
+                            contractNo, s.getLoanTerm(), s.getCompPrincipal(), s.getCompInterest(), s.getCompGuaranteeFee());
+
+                    s.setPrincipal(BigDecimal.ZERO);
+                    s.setInterest(BigDecimal.ZERO);
+                    s.setOverdueFee(BigDecimal.ZERO);
+                    s.setGuaranteeFee(BigDecimal.ZERO);
+                    TAlLoanRepayPlan.update(s.getId(), s, true);
+                    continue;
+                }
                 switch (loanTermStatus) {
                     case "n":
                         s.setLoanTermStatus("l");
@@ -572,17 +603,11 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
                         s.setCompPrincipal(s.getPrincipal());
                         s.setCompInterest(s.getInterest());
-                        Map<String, Object> env = new HashMap<>();
-                        env.put("overdueFeePrincipal", s.getPrincipal());
-                        env.put("daysOfTermLateFee", daysOfLoanCompensation);
-                        env.put("overdueFeeRate", s.getOverdueFeeRate());
-                        env.put("overdueFee", s.getOverdueFee());
-                        BigDecimal currOverdueFee = (BigDecimal) AviatorEvaluator.compile("scale(overdueFee+(multiplyRate(overdueFeePrincipal, overdueFeeRate/100)*daysOfTermLateFee))", true).execute(env);
-                        s.setCompOverdueFee(currOverdueFee);
+                        s.setCompOverdueFee(s.getOverdueFee());
                         s.setCompBreachFee(s.getBreachFee());
                         s.setCompGuaranteeFee(s.getGuaranteeFee());
 
-                        log.info("{}-{}:整笔代偿-未当期代偿期次, 代偿本金{}，利息{}，罚息{}，违约金{}，担保费{}",
+                        log.info("{}-{}:整笔代偿-到期未代偿期次, 代偿本金{}，利息{}，罚息{}，违约金{}，担保费{}",
                                 contractNo, s.getLoanTerm(), s.getCompPrincipal(), s.getCompInterest(), s.getCompOverdueFee(), s.getCompBreachFee(), s.getCompGuaranteeFee());
 
                         s.setPrincipal(BigDecimal.ZERO);
@@ -599,7 +624,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                         s.setCompGuaranteeFee(s.getGuaranteeFee());
                         s.setCompBreachFee(s.getBreachFee());
                         s.setCompTermLateFee(s.getTermLateFee());
-                        log.info("{}-{}:整笔代偿-已当期代偿期次, 代偿期款滞纳金{}，违约金{}，担保费{}", contractNo, s.getLoanTerm(), s.getCompTermLateFee(), s.getCompBreachFee(), s.getCompGuaranteeFee());
+                        log.info("{}-{}:整笔代偿-到期已代偿期次, 代偿期款滞纳金{}，违约金{}，担保费{}", contractNo, s.getLoanTerm(), s.getCompTermLateFee(), s.getCompBreachFee(), s.getCompGuaranteeFee());
                         s.setGuaranteeFee(BigDecimal.ZERO);
                         s.setBreachFee(BigDecimal.ZERO);
                         s.setTermLateFee(BigDecimal.ZERO);
