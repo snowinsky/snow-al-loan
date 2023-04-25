@@ -48,6 +48,10 @@ public class AlLoanContractRepayTest {
 
     @Test
     public void initRepayPlan() {
+        createNewContract();
+    }
+
+    private String createNewContract() {
         FundingLoanContract contract = new FundingLoanContract(LoanAmount.valueOf(new BigDecimal("12000")),
                 LoanTerm.monthTerm(12),
                 LoanRate.yearRateBeforePercent(8.2),
@@ -67,6 +71,7 @@ public class AlLoanContractRepayTest {
         alContract.contractNo("AL" + contract.contractNo());
 
         tested.initRepayPlan(alContract);
+        return alContract.contractNo();
     }
 
     @Test
@@ -119,17 +124,51 @@ public class AlLoanContractRepayTest {
     }
 
     @Test
-    public void testGoThroughAllLoan(){
-        //initRepayPlan();
-        /*tested.repay("ALF981908177209100",
+    public void testGoThroughAllLoan() {
+        String contractNo = createNewContract();
+        //到期还款结清
+        tested.repay(contractNo,
                 LocalDateTime.of(2022, 9, 12, 11, 12),
                 new BigDecimal("1134.13"));
-        tested.repay("ALF981908177209100",
+        //宽限期内还款结清
+        tested.repay(contractNo,
                 LocalDateTime.of(2022, 10, 17, 11, 12),
-                new BigDecimal("1134.13"));*/
-
-        tested.repay("ALF981908177209100",
+                new BigDecimal("1134.13"));
+        //逾期还款结清
+        tested.repay(contractNo,
                 LocalDateTime.of(2022, 11, 18, 11, 12),
                 new BigDecimal("1139.11"));
+        //到期还款结清
+        tested.repay(contractNo,
+                LocalDateTime.of(2022, 12, 12, 11, 12),
+                new BigDecimal("1134.13"));
+
+        //宽限期内还款未结清
+        tested.repay(contractNo,
+                LocalDateTime.of(2023, 1, 14, 11, 12),
+                new BigDecimal("300"));
+        //逾期还款未结清
+        /*tested.repay(contractNo,
+                LocalDateTime.of(2023, 1, 19, 11, 12),
+                new BigDecimal("200"));
+        //当期代偿
+        tested.termCompensation(contractNo,
+                LoanTerm.monthTerm(5),
+                LocalDateTime.of(2023, 1, 22, 11, 12));
+
+        //逾期还款未结清
+        tested.repay(contractNo,
+                LocalDateTime.of(2023, 2, 18, 11, 12),
+                new BigDecimal("200.01"));
+        //当期代偿
+        tested.termCompensation(contractNo,
+                LoanTerm.monthTerm(6),
+                LocalDateTime.of(2023, 2, 22, 11, 12));
+        //未到期还款未结清
+        tested.repay(contractNo,
+                LocalDateTime.of(2023, 3, 10, 11, 12),
+                new BigDecimal("1000"));
+        //整笔代偿
+        tested.loanCompensation(contractNo, LocalDateTime.of(2023, 3, 22, 11, 12));*/
     }
 }

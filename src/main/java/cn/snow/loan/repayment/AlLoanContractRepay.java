@@ -1,7 +1,6 @@
 package cn.snow.loan.repayment;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -26,24 +25,36 @@ import cn.snow.loan.contract.FundingLoanContract;
 import cn.snow.loan.contract.ILoanContract;
 import cn.snow.loan.dao.model.TAlLoanContract;
 import cn.snow.loan.dao.model.TAlLoanRepayPlan;
-import cn.snow.loan.dao.model.TRepayHistory;
 import cn.snow.loan.plan.al.AlLoan;
 import cn.snow.loan.plan.al.GuaranteeFeePerTerm;
 import cn.snow.loan.plan.funding.LoanPerTerm;
 import cn.snow.loan.plan.funding.prepare.LoanTerm;
 import cn.snow.loan.repayment.BalanceMgmt.ConsumeResult;
-import cn.snow.loan.utils.JsonUtil;
+import cn.snow.loan.repayment.aviator.plugin.RateMultiplyFunction;
+import cn.snow.loan.repayment.aviator.plugin.ScaleAmountFunction;
 
 public class AlLoanContractRepay implements ILoanContractRepay {
 
     private static final Logger log = LoggerFactory.getLogger(AlLoanContractRepay.class);
 
+    public AlLoanContractRepay() {
+        AviatorEvaluator.addFunction(new RateMultiplyFunction());
+        AviatorEvaluator.addFunction(new ScaleAmountFunction());
+    }
+
+    /**
+     * 初始化合同和还款计划
+     *
+     * @param contract
+     * @return
+     */
     @Override
     public Result initRepayPlan(ILoanContract contract) {
         try {
             return Databases.executeTransactionally((connection, sqlExecutor) -> {
                 AlLoanContract alLoanContract = (AlLoanContract) contract;
                 FundingLoanContract fundingLoanContract = alLoanContract.getFundingLoanContract();
+                //创建合同
                 TAlLoanContract tAlLoanContract = Optional.of(alLoanContract).map(a -> {
                     TAlLoanContract c = new TAlLoanContract();
                     c.setContractNo(alLoanContract.contractNo());
@@ -62,6 +73,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                 }).orElseThrow(() -> new IllegalStateException("init al loan contract fail"));
                 TAlLoanContract.create(tAlLoanContract, true);
 
+                //创建执行计划
                 AlLoan alLoan = (AlLoan) alLoanContract.repayPlanTrial();
                 List<LoanPerTerm> fundingLoanTerms = alLoan.getAllLoans();
                 List<GuaranteeFeePerTerm> alLoanGuaranteeFeeTerms = alLoan.getAllGuaranteeFees();
@@ -104,13 +116,19 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
     }
 
+    /**
+     * 设定合同逾期标识
+     *
+     * @param contractNo
+     * @param checkDateTime
+     * @return
+     */
     @Override
     public Result setOverdueFlag(String contractNo, LocalDateTime checkDateTime) {
         List<TAlLoanRepayPlan> ss = queryAllRepayPlanByContractNo(contractNo);
         ss.stream().filter(a -> checkDateTime.isAfter(a.getGraceDate())).forEach(s -> {
-            long durationDay = Duration.between(s.getGraceDate(), checkDateTime).toDays();
             //过了宽限期且还没有还清本期欠款的，设定本期为逾期
-            if (s.getOverdueFlag() == 0 && durationDay > 0 && s.getPrincipal().compareTo(BigDecimal.ZERO) > 0) {
+            if (s.getOverdueFlag() == 0 && s.getPrincipal().compareTo(BigDecimal.ZERO) > 0) {
                 s.setOverdueFlag(1);
                 log.info("contractNo={} set overdueFlag=1 at {}", contractNo, checkDateTime);
                 try {
@@ -123,6 +141,12 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         return Result.success("set overdue flag complete");
     }
 
+    /**
+     * 获取当前所有的还款计划
+     *
+     * @param contractNo
+     * @return
+     */
     private List<TAlLoanRepayPlan> queryAllRepayPlanByContractNo(String contractNo) {
         try {
             List<TAlLoanRepayPlan> l = TAlLoanRepayPlan.query("contract_no = ?", contractNo);
@@ -135,37 +159,36 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
     }
 
+    /**
+     * 还款试算，计算当下需要还多少钱
+     *
+     * @param contractNo
+     * @param repayDateTime
+     * @return
+     */
     @Override
     public List<TAlLoanRepayPlan> preRepayTrail(String contractNo, LocalDateTime repayDateTime) {
-        List<TAlLoanRepayPlan> l = preRepayTrailCore(contractNo, repayDateTime)
-                .stream()
-                //过滤掉已经正常还清的期次
-                .filter(a -> a.getCompPrincipal().compareTo(BigDecimal.ZERO) != 0 || a.getPrincipal().compareTo(BigDecimal.ZERO) != 0)
-                //按期次顺序排序
-                .sorted(Comparator.comparing(TAlLoanRepayPlan::getLoanTerm))
-                .collect(Collectors.toList());
+        List<TAlLoanRepayPlan> l = preRepayTrailCore(contractNo, repayDateTime);
         if (l.isEmpty()) {
             log.warn("contractNo={} notfound", contractNo);
             throw new IllegalStateException("cannot found repay plan in the contract=" + contractNo);
         }
-        TRepayHistory h = new TRepayHistory();
-        h.setAlContractNo(contractNo);
-        h.setRepayType(1);
-        h.setAmount(new BigDecimal("0"));
-        h.setRepayDate(LocalDateTime.now());
-        h.setPairDetail(JsonUtil.toJson(l));
-        h.setComments("");
-        try {
-            TRepayHistory.create(h, true);
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
-        }
         return l;
     }
 
+    /**
+     * 还款试算核心功能
+     *
+     * @param contractNo
+     * @param repayDateTime
+     * @return
+     */
     private List<TAlLoanRepayPlan> preRepayTrailCore(String contractNo, LocalDateTime repayDateTime) {
+        //设定逾期标志
         setOverdueFlag(contractNo, repayDateTime);
+        //查出数据库中当前还款状况
         List<TAlLoanRepayPlan> ss = queryAllRepayPlanByContractNo(contractNo);
+        //如果已经整笔代偿了，则只需要计算贷款滞纳金
         if (isWholeLoanCompensation(ss)) {
             return ss.stream().peek(b -> {
                 //计算整笔贷款的贷款滞纳金
@@ -180,8 +203,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                         env.put("compGuaranteeFee", b.getCompGuaranteeFee());
                         env.put("compBreachFee", b.getCompBreachFee());
 
-                        BigDecimal compAmt = (BigDecimal) AviatorEvaluator.compile("compPrincipal+compInterest+compOverdueFee+compTermLateFee+compGuaranteeFee+compBreachFee", true).execute(env);
-                        compAmt = compAmt.setScale(2, RoundingMode.HALF_UP);
+                        BigDecimal compAmt = (BigDecimal) AviatorEvaluator.compile("scale(compPrincipal+compInterest+compOverdueFee+compTermLateFee+compGuaranteeFee+compBreachFee)", true).execute(env);
 
                         env.put("compAmt", compAmt);
                         log.info("{}-{}:试算贷款滞纳金母金额={} by {}", contractNo, b.getLoanTerm(), compAmt, env);
@@ -190,14 +212,18 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                         env.put("loanLateFee", b.getLoanLateFee());
 
                         b.setCompAmt(compAmt);
-                        BigDecimal currLoanLateFee = (BigDecimal) AviatorEvaluator.compile("loanLateFee+(compAmt*loanLateFeeRate/100*daysOfLoanLateFee)", true).execute(env);
-                        currLoanLateFee = currLoanLateFee.setScale(2, RoundingMode.HALF_UP);
+                        BigDecimal currLoanLateFee = (BigDecimal) AviatorEvaluator.compile("scale(loanLateFee+(multiplyRate(compAmt, loanLateFeeRate/100)*daysOfLoanLateFee))", true).execute(env);
                         b.setLoanLateFee(currLoanLateFee);
                         log.info("{}-{}:试算贷款滞纳金={} by {}", contractNo, b.getLoanTerm(), b.getLoanLateFee(), env);
                     }
                 }
-            }).collect(Collectors.toList());
+            })//过滤掉已经正常还清的期次
+                    .filter(a -> a.getCompPrincipal().compareTo(BigDecimal.ZERO) != 0 || a.getPrincipal().compareTo(BigDecimal.ZERO) != 0)
+                    //按期次顺序排序
+                    .sorted(Comparator.comparing(TAlLoanRepayPlan::getLoanTerm))
+                    .collect(Collectors.toList());
         }
+        //没整笔代偿时，需要计算每一期的实际应付款项
         return ss.stream().filter(a -> repayDateTime.isAfter(a.getRepayDate())).peek(b -> {
             //当期代偿之后才开始计算计算期款滞纳金
             if (b.getCompTermDate() != null) {
@@ -208,8 +234,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                     env.put("daysOfTermLateFee", daysOfTermLateFee);
                     env.put("termLateFeeRate", b.getTermLateFeeRate());
                     env.put("termLateFee", b.getTermLateFee());
-                    BigDecimal currTermLateFee = (BigDecimal) AviatorEvaluator.compile("termLateFee+(compPrincipal*termLateFeeRate/100*daysOfTermLateFee)", true).execute(env);
-                    currTermLateFee = currTermLateFee.setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal currTermLateFee = (BigDecimal) AviatorEvaluator.compile("scale(termLateFee+(multiplyRate(compPrincipal, termLateFeeRate/100)*daysOfTermLateFee))", true).execute(env);
                     b.setTermLateFee(currTermLateFee);
                     log.info("{}-{}:试算期款滞纳金={} by {}", contractNo, b.getLoanTerm(), b.getTermLateFee(), env);
                 }
@@ -217,7 +242,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                 //计算罚息和违约金，都是宽限期内不算，超出宽限期直接从还款日开始算
                 long daysOfOverdueFee = Duration.between(b.getLastRepayDate(), repayDateTime).toDays();
                 //只有当剩余未还本金大于0的时候才会计算罚息和违约金
-                if (b.getPrincipal().compareTo(BigDecimal.ZERO) > 0 && repayDateTime.isAfter(b.getGraceDate()) && daysOfOverdueFee > 0) {
+                if (b.getPrincipal().compareTo(BigDecimal.ZERO) > 0 && repayDateTime.isAfter(b.getRepayDate()) && daysOfOverdueFee > 0) {
 
                     Map<String, Object> env = new HashMap<>();
                     env.put("principal", b.getPrincipal());
@@ -229,14 +254,17 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
                     b.setOverdueFee(getOverdueFeeBalance(env));
                     log.info("{}-{}:试算罚息={} by {}", contractNo, b.getLoanTerm(), b.getOverdueFee(), env);
-                    BigDecimal currBreachFee = (BigDecimal) AviatorEvaluator.compile("breachFee+(principal*breachFeeRate/100*daysOfOverdue)", true).execute(env);
-                    currBreachFee = currBreachFee.setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal currBreachFee = (BigDecimal) AviatorEvaluator.compile("scale(breachFee+(multiplyRate(principal, breachFeeRate/100)*daysOfOverdue))", true).execute(env);
                     b.setBreachFee(currBreachFee);
                     log.info("{}-{}:试算违约金={} by {}", contractNo, b.getLoanTerm(), b.getBreachFee(), env);
                 }
             }
 
-        }).collect(Collectors.toList());
+        })//过滤掉已经正常还清的期次
+                .filter(a -> a.getCompPrincipal().compareTo(BigDecimal.ZERO) != 0 || a.getPrincipal().compareTo(BigDecimal.ZERO) != 0)
+                //按期次顺序排序
+                .sorted(Comparator.comparing(TAlLoanRepayPlan::getLoanTerm))
+                .collect(Collectors.toList());
     }
 
     private boolean isWholeLoanCompensation(List<TAlLoanRepayPlan> ss) {
@@ -251,8 +279,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
      * @return
      */
     private BigDecimal getOverdueFeeBalance(Map<String, Object> env) {
-        Object r = AviatorEvaluator.compile("overdueFee+principal*overdueFeeRate/100*daysOfOverdue", true).execute(env);
-        return ((BigDecimal) r).setScale(2, RoundingMode.HALF_UP);
+        return (BigDecimal) AviatorEvaluator.compile("scale(overdueFee+multiplyRate(principal, overdueFeeRate/100)*daysOfOverdue)", true).execute(env);
     }
 
     @Override
@@ -262,9 +289,13 @@ public class AlLoanContractRepay implements ILoanContractRepay {
             List<TAlLoanRepayPlan> ss = preRepayTrail(contractNo, repayDateTime);
             BalanceMgmt bm = new BalanceMgmt(repayAmount);
             for (TAlLoanRepayPlan p : ss) {
-                if (consumeRepayAmountPerTermReturnBalance(repayDateTime, bm, p)) {
+                if (consumeRepayAmountPerTerm(repayDateTime, bm, p)) {
                     break;
                 }
+            }
+            if (bm.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                log.error("客户溢缴款{}元，合同号{}，总还款额={}", bm.getBalance(), contractNo, repayAmount);
+                throw new IllegalStateException("客户溢缴款，无法配账。。。。");
             }
         } catch (SQLException e) {
             throw new IllegalStateException("repay fail", e);
@@ -272,8 +303,114 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         return Result.success("repay success");
     }
 
+    private boolean consumeRepayAmountPerTermInGraceDate(LocalDateTime repayDateTime, BalanceMgmt preBalance, TAlLoanRepayPlan p) throws SQLException {
+        p.setLastRepayDate(repayDateTime.truncatedTo(ChronoUnit.DAYS));
+        ConsumeResult cr;
+        //p.getOverdueFee(); 罚息
+        /*log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "罚息");
+        ConsumeResult cr = preBalance.consumeBalance(p.getOverdueFee());
+        p.setOverdueFee(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }*/
+        //p.getInterest(); 利息
+        log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "利息");
+        cr = preBalance.consumeBalance(p.getInterest());
+        p.setInterest(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }
+        //p.getPrincipal(); 本金
+        log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "本金");
+        cr = preBalance.consumeBalance(p.getPrincipal());
+        p.setPrincipal(cr.getBalance());
+        if (p.getPrincipal().compareTo(BigDecimal.ZERO) <= 0) {
+            p.setOverdueFee(BigDecimal.ZERO);
+            p.setBreachFee(BigDecimal.ZERO);
+        }
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }
+        //p.getLoanLateFee(); 贷款滞纳金
+        log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "贷款滞纳金");
+        cr = preBalance.consumeBalance(p.getLoanLateFee());
+        p.setLoanLateFee(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }
+        //p.getTermLateFee(); 期款滞纳金
+        log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "期款滞纳金");
+        cr = preBalance.consumeBalance(p.getTermLateFee());
+        p.setTermLateFee(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }
+        //p.getCompOverdueFee(); 代偿罚息
+        log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿罚息");
+        cr = preBalance.consumeBalance(p.getCompOverdueFee());
+        p.setCompOverdueFee(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }
+        //p.getCompInterest(); 代偿利息
+        log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿利息");
+        cr = preBalance.consumeBalance(p.getCompInterest());
+        p.setCompInterest(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }
+        //p.getBreachFee(); 违约金
+        /*log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "违约金");
+        cr = preBalance.consumeBalance(p.getBreachFee());
+        p.setBreachFee(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }*/
+        //p.getGuaranteeFee(); 担保费
+        log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "担保费");
+        cr = preBalance.consumeBalance(p.getGuaranteeFee());
+        p.setGuaranteeFee(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }
+        //p.getCompBreachFee(); 代偿违约金
+        log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿违约金");
+        cr = preBalance.consumeBalance(p.getCompBreachFee());
+        p.setCompBreachFee(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }
+        //p.getCompGuaranteeFee(); 代偿担保费
+        log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿担保费");
+        cr = preBalance.consumeBalance(p.getCompGuaranteeFee());
+        p.setCompGuaranteeFee(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }
+        //p.getCompPrincipal(); 代偿本金
+        log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿本金");
+        cr = preBalance.consumeBalance(p.getCompPrincipal());
+        p.setCompPrincipal(cr.getBalance());
+        if (cr.insufficient()) {
+            TAlLoanRepayPlan.update(p.getId(), p, true);
+            return true;
+        }
+        TAlLoanRepayPlan.update(p.getId(), p, true);
+        return false;
+    }
 
-    private boolean consumeRepayAmountPerTermReturnBalance(LocalDateTime repayDateTime, BalanceMgmt preBalance, TAlLoanRepayPlan p) throws SQLException {
+    private boolean consumeRepayAmountPerTermOutGraceDate(LocalDateTime repayDateTime, BalanceMgmt preBalance, TAlLoanRepayPlan p) throws SQLException {
         p.setLastRepayDate(repayDateTime.truncatedTo(ChronoUnit.DAYS));
         //p.getOverdueFee(); 罚息
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "罚息");
@@ -375,6 +512,13 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         return false;
     }
 
+    private boolean consumeRepayAmountPerTerm(LocalDateTime repayDateTime, BalanceMgmt preBalance, TAlLoanRepayPlan p) throws SQLException {
+        if (repayDateTime.isAfter(p.getGraceDate())) {
+            return consumeRepayAmountPerTermOutGraceDate(repayDateTime, preBalance, p);
+        }
+        return consumeRepayAmountPerTermInGraceDate(repayDateTime, preBalance, p);
+    }
+
     @Override
     public Result termCompensation(String contractNo, LoanTerm term, LocalDateTime compensationDateTime) {
         log.info("当期代偿，合同号={}，期次={}，时间={}", contractNo, term, compensationDateTime);
@@ -429,9 +573,8 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                         env.put("daysOfTermLateFee", daysOfLoanCompensation);
                         env.put("overdueFeeRate", s.getOverdueFeeRate());
                         env.put("overdueFee", s.getOverdueFee());
-                        Object currOverdueFee = AviatorEvaluator.compile("overdueFee+(overdueFeePrincipal*overdueFeeRate/100*daysOfTermLateFee)", true).execute(env);
-                        BigDecimal currOverdueFeeDecimal = ((BigDecimal) currOverdueFee).setScale(2, RoundingMode.HALF_UP);
-                        s.setCompOverdueFee(currOverdueFeeDecimal);
+                        BigDecimal currOverdueFee = (BigDecimal) AviatorEvaluator.compile("scale(overdueFee+(multiplyRate(overdueFeePrincipal, overdueFeeRate/100)*daysOfTermLateFee))", true).execute(env);
+                        s.setCompOverdueFee(currOverdueFee);
                         s.setCompBreachFee(s.getBreachFee());
                         s.setCompGuaranteeFee(s.getGuaranteeFee());
 

@@ -28,6 +28,10 @@ public class BalanceMgmt {
         }
     }
 
+    public BigDecimal getBalance() {
+        return balance;
+    }
+
     public static ConsumeResult sufficient(BigDecimal balance) {
         return new ConsumeResult(true, balance);
     }
