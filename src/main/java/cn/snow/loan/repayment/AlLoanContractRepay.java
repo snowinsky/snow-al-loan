@@ -200,7 +200,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
                         env.put("compPrincipal", b.getCompPrincipal());
                         env.put("compInterest", b.getCompInterest());
                         env.put("compOverdueFee", b.getCompOverdueFee());
-                        env.put("compTermLateFee", b.getTermLateFee());
+                        env.put("compTermLateFee", b.getCompTermLateFee());
                         env.put("compGuaranteeFee", b.getCompGuaranteeFee());
                         env.put("compBreachFee", b.getCompBreachFee());
 
