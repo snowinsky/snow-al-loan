@@ -17,13 +17,17 @@ public class BalanceMgmt {
     }
 
     public ConsumeResult consumeBalance(BigDecimal amt) {
+        return consumeBalance(amt, "");
+    }
+
+    public ConsumeResult consumeBalance(BigDecimal amt, String amtTitle){
         BigDecimal preBalance = new BigDecimal(balance.toString());
         balance = balance.subtract(amt);
         if (balance.compareTo(BigDecimal.ZERO) > 0) {
-            log.info("还款：preBalance={}, spendAmt={}, endBalance={}", preBalance, amt, balance);
+            log.info("还款{}：preBalance={}, spendAmt={}, endBalance={}", amtTitle, preBalance, amt, balance);
             return sufficient(BigDecimal.ZERO);
         } else {
-            log.info("还款：preBalance={}, spendAmt={}, endBalance={}", preBalance, amt, 0);
+            log.info("还款{}：preBalance={}, spendAmt={}, endBalance={}", amtTitle, preBalance, amt, 0);
             return insufficient(new BigDecimal("-1").multiply(balance));
         }
     }

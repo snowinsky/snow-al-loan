@@ -33,6 +33,7 @@ import cn.snow.loan.repayment.BalanceMgmt.ConsumeResult;
 import cn.snow.loan.repayment.aviator.plugin.RateMultiplyFunction;
 import cn.snow.loan.repayment.aviator.plugin.ScaleAmountFunction;
 
+@SuppressWarnings("all")
 public class AlLoanContractRepay implements ILoanContractRepay {
 
     private static final Logger log = LoggerFactory.getLogger(AlLoanContractRepay.class);
@@ -316,7 +317,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }*/
         //p.getInterest(); 利息
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "利息");
-        cr = preBalance.consumeBalance(p.getInterest());
+        cr = preBalance.consumeBalance(p.getInterest(), "利息");
         p.setInterest(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -324,9 +325,10 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getPrincipal(); 本金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "本金");
-        cr = preBalance.consumeBalance(p.getPrincipal());
+        cr = preBalance.consumeBalance(p.getPrincipal(), "本金");
         p.setPrincipal(cr.getBalance());
         if (p.getPrincipal().compareTo(BigDecimal.ZERO) <= 0) {
+            log.info("{}-{}:客户宽限期内还款[{}]结清，免罚息{}和违约金{}。", p.getContractNo(), p.getLoanTerm(), "本金", p.getOverdueFee(), p.getBreachFee());
             p.setOverdueFee(BigDecimal.ZERO);
             p.setBreachFee(BigDecimal.ZERO);
         }
@@ -336,7 +338,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getLoanLateFee(); 贷款滞纳金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "贷款滞纳金");
-        cr = preBalance.consumeBalance(p.getLoanLateFee());
+        cr = preBalance.consumeBalance(p.getLoanLateFee(), "贷款滞纳金");
         p.setLoanLateFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -344,7 +346,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getTermLateFee(); 期款滞纳金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "期款滞纳金");
-        cr = preBalance.consumeBalance(p.getTermLateFee());
+        cr = preBalance.consumeBalance(p.getTermLateFee(), "期款滞纳金");
         p.setTermLateFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -352,7 +354,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getCompOverdueFee(); 代偿罚息
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿罚息");
-        cr = preBalance.consumeBalance(p.getCompOverdueFee());
+        cr = preBalance.consumeBalance(p.getCompOverdueFee(), "代偿罚息");
         p.setCompOverdueFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -360,7 +362,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getCompInterest(); 代偿利息
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿利息");
-        cr = preBalance.consumeBalance(p.getCompInterest());
+        cr = preBalance.consumeBalance(p.getCompInterest(), "代偿利息");
         p.setCompInterest(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -376,7 +378,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }*/
         //p.getGuaranteeFee(); 担保费
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "担保费");
-        cr = preBalance.consumeBalance(p.getGuaranteeFee());
+        cr = preBalance.consumeBalance(p.getGuaranteeFee(), "担保费");
         p.setGuaranteeFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -384,7 +386,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getCompBreachFee(); 代偿违约金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿违约金");
-        cr = preBalance.consumeBalance(p.getCompBreachFee());
+        cr = preBalance.consumeBalance(p.getCompBreachFee(), "代偿违约金");
         p.setCompBreachFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -392,7 +394,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getCompGuaranteeFee(); 代偿担保费
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿担保费");
-        cr = preBalance.consumeBalance(p.getCompGuaranteeFee());
+        cr = preBalance.consumeBalance(p.getCompGuaranteeFee(), "代偿担保费");
         p.setCompGuaranteeFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -400,7 +402,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getCompPrincipal(); 代偿本金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿本金");
-        cr = preBalance.consumeBalance(p.getCompPrincipal());
+        cr = preBalance.consumeBalance(p.getCompPrincipal(), "代偿本金");
         p.setCompPrincipal(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -414,7 +416,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         p.setLastRepayDate(repayDateTime.truncatedTo(ChronoUnit.DAYS));
         //p.getOverdueFee(); 罚息
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "罚息");
-        ConsumeResult cr = preBalance.consumeBalance(p.getOverdueFee());
+        ConsumeResult cr = preBalance.consumeBalance(p.getOverdueFee(), "罚息");
         p.setOverdueFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -422,7 +424,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getInterest(); 利息
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "利息");
-        cr = preBalance.consumeBalance(p.getInterest());
+        cr = preBalance.consumeBalance(p.getInterest(), "利息");
         p.setInterest(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -430,7 +432,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getPrincipal(); 本金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "本金");
-        cr = preBalance.consumeBalance(p.getPrincipal());
+        cr = preBalance.consumeBalance(p.getPrincipal(), "本金");
         p.setPrincipal(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -438,7 +440,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getLoanLateFee(); 贷款滞纳金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "贷款滞纳金");
-        cr = preBalance.consumeBalance(p.getLoanLateFee());
+        cr = preBalance.consumeBalance(p.getLoanLateFee(), "贷款滞纳金");
         p.setLoanLateFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -446,7 +448,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getTermLateFee(); 期款滞纳金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "期款滞纳金");
-        cr = preBalance.consumeBalance(p.getTermLateFee());
+        cr = preBalance.consumeBalance(p.getTermLateFee(), "期款滞纳金");
         p.setTermLateFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -454,7 +456,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getCompOverdueFee(); 代偿罚息
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿罚息");
-        cr = preBalance.consumeBalance(p.getCompOverdueFee());
+        cr = preBalance.consumeBalance(p.getCompOverdueFee(), "代偿罚息");
         p.setCompOverdueFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -462,7 +464,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getCompInterest(); 代偿利息
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿利息");
-        cr = preBalance.consumeBalance(p.getCompInterest());
+        cr = preBalance.consumeBalance(p.getCompInterest(), "代偿利息");
         p.setCompInterest(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -470,7 +472,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getBreachFee(); 违约金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "违约金");
-        cr = preBalance.consumeBalance(p.getBreachFee());
+        cr = preBalance.consumeBalance(p.getBreachFee(), "违约金");
         p.setBreachFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -478,7 +480,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getGuaranteeFee(); 担保费
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "担保费");
-        cr = preBalance.consumeBalance(p.getGuaranteeFee());
+        cr = preBalance.consumeBalance(p.getGuaranteeFee(), "担保费");
         p.setGuaranteeFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -486,7 +488,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getCompBreachFee(); 代偿违约金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿违约金");
-        cr = preBalance.consumeBalance(p.getCompBreachFee());
+        cr = preBalance.consumeBalance(p.getCompBreachFee(), "代偿违约金");
         p.setCompBreachFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -494,7 +496,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getCompGuaranteeFee(); 代偿担保费
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿担保费");
-        cr = preBalance.consumeBalance(p.getCompGuaranteeFee());
+        cr = preBalance.consumeBalance(p.getCompGuaranteeFee(), "代偿担保费");
         p.setCompGuaranteeFee(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);
@@ -502,7 +504,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         }
         //p.getCompPrincipal(); 代偿本金
         log.info("{}-{}:客户还款[{}]开始", p.getContractNo(), p.getLoanTerm(), "代偿本金");
-        cr = preBalance.consumeBalance(p.getCompPrincipal());
+        cr = preBalance.consumeBalance(p.getCompPrincipal(), "代偿本金");
         p.setCompPrincipal(cr.getBalance());
         if (cr.insufficient()) {
             TAlLoanRepayPlan.update(p.getId(), p, true);

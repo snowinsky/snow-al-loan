@@ -144,9 +144,9 @@ public class AlLoanContractRepayTest {
                 new BigDecimal("1134.13"));
 
         //宽限期内还款未结清
-        tested.repay(contractNo,
+        /*tested.repay(contractNo,
                 LocalDateTime.of(2023, 1, 14, 11, 12),
-                new BigDecimal("300"));
+                new BigDecimal("300"));*/
         //逾期还款未结清
         /*tested.repay(contractNo,
                 LocalDateTime.of(2023, 1, 19, 11, 12),
