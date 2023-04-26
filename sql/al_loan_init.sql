@@ -104,17 +104,16 @@ CREATE TABLE t_al_Loan_repay_plan
 -- -----------------------------------------------------------------------------------
 -- 客户还款历史表
 -- ___________________________________________________________________________________
-drop table if exists t_repay_history;
-CREATE TABLE t_repay_history
+drop table if exists t_al_loan_trx_history;
+CREATE TABLE t_al_loan_trx_history
 (
     id             BIGINT         NOT NULL AUTO_INCREMENT,
     al_contract_no VARCHAR(50)    NOT NULL,
-    repay_type     MEDIUMINT(4)   NOT NULL COMMENT '1.repay 2.term compensation 3 loan compensation',
+    trx_type       MEDIUMINT(4)   NOT NULL COMMENT '1.repay 2.term compensation 3 loan compensation',
     amount         DECIMAL(20, 2) NOT NULL,
-    repay_date     DATETIME       NOT NULL,
-    pair_detail    JSON           NOT NULL,
-    comments       VARCHAR(50)    NOT NULL DEFAULT '',
-    PRIMARY KEY pk_repay_history (id),
-    FULLTEXT INDEX idx_repay_history_al_contract_no (al_contract_no)
-);
-
+    trx_date_time  DATETIME       NOT NULL,
+    trx_detail     JSON           NOT NULL,
+    trx_type_info  VARCHAR(50)    NOT NULL DEFAULT '',
+    PRIMARY KEY pk_al_loan_trx_history (id),
+    FULLTEXT INDEX idx_al_loan_trx_history_al_contract_no (al_contract_no)
+) COMMENT '记录助贷的合同中的还款计划中每一次的变化历史';

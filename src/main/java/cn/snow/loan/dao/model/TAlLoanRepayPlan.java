@@ -5,6 +5,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.StringJoiner;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.braisdom.objsql.annotations.Column;
 import com.github.braisdom.objsql.annotations.DomainModel;
 import com.github.braisdom.objsql.annotations.PrimaryKey;
@@ -32,18 +37,27 @@ public class TAlLoanRepayPlan implements Serializable {
      * 还款日
      */
     @Column
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm",timezone = "Asia/Shanghai")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime repayDate;
 
     /**
      * 宽限日
      */
     @Column
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm",timezone = "Asia/Shanghai")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime graceDate;
 
     /**
      * 代偿日
      */
     @Column
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm",timezone = "Asia/Shanghai")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime compensationDate;
 
     /**
@@ -100,6 +114,10 @@ public class TAlLoanRepayPlan implements Serializable {
      * 上一次的还款时间
      */
     @Column
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm",timezone = "Asia/Shanghai")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime lastRepayDate;
 
     /**

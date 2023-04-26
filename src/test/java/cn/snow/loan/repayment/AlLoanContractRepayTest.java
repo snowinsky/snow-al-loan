@@ -6,6 +6,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -15,11 +17,12 @@ import cn.snow.loan.contract.AlLoanContract;
 import cn.snow.loan.contract.FundingLoanContract;
 import cn.snow.loan.dao.DbHandler;
 import cn.snow.loan.dao.model.TAlLoanRepayPlan;
-import cn.snow.loan.dao.model.TRepayHistory;
+import cn.snow.loan.dao.model.TAlLoanTrxHistory;
 import cn.snow.loan.plan.al.prepare.AlLoanRate;
 import cn.snow.loan.plan.funding.prepare.LoanAmount;
 import cn.snow.loan.plan.funding.prepare.LoanRate;
 import cn.snow.loan.plan.funding.prepare.LoanTerm;
+import cn.snow.loan.utils.JsonUtil;
 
 public class AlLoanContractRepayTest {
 
@@ -35,16 +38,32 @@ public class AlLoanContractRepayTest {
     }
 
     @Test
+    public void testJackson(){
+        ObjectNode objectNode = JsonUtil.createNewObjectNode();
+        objectNode.put("contractNo", "contractNo");
+        objectNode.put("trxDateTime", LocalDateTime.now().toString());
+        ArrayNode arrayNode = objectNode.putArray("trxPerTerm");
+
+        ObjectNode subObj = JsonUtil.createNewObjectNode();
+        subObj.put("ss", "sdf");
+        subObj.put("bb", 22);
+        arrayNode.add(subObj);
+        System.out.println(objectNode);
+    }
+
+    @Test
     public void testJsonInMySql() throws SQLException {
         log.info("sdfsdfsdf{}", "asdfa");
-        TRepayHistory h = new TRepayHistory();
-        h.setAlContractNo("qwrqrqwrwq");
-        h.setRepayType(1);
+        TAlLoanTrxHistory h = new TAlLoanTrxHistory();
+        h.setAlContractNo("123123");
+        h.setTrxType(12313);
         h.setAmount(new BigDecimal("0"));
-        h.setRepayDate(LocalDateTime.now());
-        h.setPairDetail("{\"sdf\":\"123\"}");
-        h.setComments("");
-        TRepayHistory.create(h, true);
+        h.setTrxDateTime(LocalDateTime.now());
+        h.setTrxDetail("{}");
+        h.setTrxTypeInfo("1231");
+        TAlLoanTrxHistory.create(h, true);
+
+
     }
 
     @Test

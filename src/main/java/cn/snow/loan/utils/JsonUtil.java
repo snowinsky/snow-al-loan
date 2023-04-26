@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,6 +96,14 @@ public class JsonUtil {
             log.warn("toJson fail:", e);
             return null;
         }
+    }
+
+    public static ArrayNode createNewJsonArray(){
+        return OBJECT_MAPPER.createArrayNode();
+    }
+
+    public static ObjectNode createNewObjectNode(){
+        return OBJECT_MAPPER.createObjectNode();
     }
 
 }
