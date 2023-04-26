@@ -132,46 +132,45 @@ public class AlLoanContractRepay implements ILoanContractRepay {
     public Result setOverdueFlag(String contractNo, LocalDateTime checkDateTime) {
         List<TAlLoanRepayPlan> ss = queryAllRepayPlanByContractNo(contractNo);
 
-        ObjectNode objectNode = JsonUtil.createNewObjectNode();
-        objectNode.put("contractNo", contractNo);
-        objectNode.put("trxDateTime", checkDateTime.toString());
-        ArrayNode arrayNode = objectNode.putArray("trxPerTerm");
+        try {
+            return Databases.executeTransactionally((connection, sqlExecutor) -> {
 
-        ss.stream().filter(a -> checkDateTime.isAfter(a.getGraceDate())).forEach(s -> {
-            //过了宽限期且还没有还清本期欠款的，设定本期为逾期
-            if (s.getOverdueFlag() == 0 && s.getPrincipal().compareTo(BigDecimal.ZERO) > 0) {
-                ObjectNode subObj = JsonUtil.createNewObjectNode();
-                subObj.put("trxType", "changeOverdueFlag");
-                subObj.put("loanTerm", s.getLoanTerm());
-                subObj.putPOJO("beforeTrx", JsonUtil.toJson(s));
-                s.setOverdueFlag(1);
-                log.info("contractNo={} set overdueFlag=1 at {}", contractNo, checkDateTime);
-                subObj.putPOJO("afterTrx", JsonUtil.toJson(s));
-                arrayNode.add(subObj);
-                try {
-                    TAlLoanRepayPlan.update(s.getId(), s, true);
-                } catch (SQLException e) {
-                    throw new IllegalStateException("set overdue flag fail");
+                ObjectNode objectNode = JsonUtil.createNewObjectNode();
+                objectNode.put("contractNo", contractNo);
+                objectNode.put("trxDateTime", checkDateTime.toString());
+                ArrayNode arrayNode = objectNode.putArray("trxPerTerm");
+
+                for (TAlLoanRepayPlan s : ss) {
+                    //过了宽限期且还没有还清本期欠款的，设定本期为逾期
+                    if (checkDateTime.isAfter(s.getGraceDate()) && s.getOverdueFlag() == 0 && s.getPrincipal().compareTo(BigDecimal.ZERO) > 0) {
+                        ObjectNode subObj = JsonUtil.createNewObjectNode();
+                        subObj.put("trxType", "changeOverdueFlag");
+                        subObj.put("loanTerm", s.getLoanTerm());
+                        subObj.putPOJO("beforeTrx", JsonUtil.toJson(s));
+                        s.setOverdueFlag(1);
+                        log.info("contractNo={} set overdueFlag=1 at {}", contractNo, checkDateTime);
+                        subObj.putPOJO("afterTrx", JsonUtil.toJson(s));
+                        arrayNode.add(subObj);
+                        TAlLoanRepayPlan.update(s.getId(), s, true);
+                    }
                 }
-            }
-        });
 
-        if(!arrayNode.isEmpty()) {
-            TAlLoanTrxHistory h = new TAlLoanTrxHistory();
-            h.setAlContractNo(contractNo);
-            h.setTrxType(1);
-            h.setAmount(BigDecimal.ZERO);
-            h.setTrxDateTime(checkDateTime);
-            h.setTrxDetail(objectNode.toPrettyString());
-            h.setTrxTypeInfo("客户逾期");
-            try {
-                TAlLoanTrxHistory.create(h, true);
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
+                if (!arrayNode.isEmpty()) {
+                    TAlLoanTrxHistory h = new TAlLoanTrxHistory();
+                    h.setAlContractNo(contractNo);
+                    h.setTrxType(1);
+                    h.setAmount(BigDecimal.ZERO);
+                    h.setTrxDateTime(checkDateTime);
+                    h.setTrxDetail(objectNode.toPrettyString());
+                    h.setTrxTypeInfo("客户逾期");
+                    TAlLoanTrxHistory.create(h, true);
+                }
+
+                return Result.success("set overdue flag complete");
+            });
+        } catch (SQLException e) {
+            throw new IllegalStateException("set overdue flag fail");
         }
-
-        return Result.success("set overdue flag complete");
     }
 
     /**
@@ -319,30 +318,32 @@ public class AlLoanContractRepay implements ILoanContractRepay {
     public Result repay(String contractNo, LocalDateTime repayDateTime, BigDecimal repayAmount) {
         log.info("###############客户还款，合同号={}，金额={}，时间={}", contractNo, repayAmount, repayDateTime);
         try {
-            List<TAlLoanRepayPlan> ss = preRepayTrail(contractNo, repayDateTime);
-            BalanceMgmt bm = new BalanceMgmt(repayAmount);
-            for (TAlLoanRepayPlan p : ss) {
-                if (consumeRepayAmountPerTerm(repayDateTime, bm, p)) {
-                    break;
+            return Databases.executeTransactionally((connection, sqlExecutor) -> {
+                List<TAlLoanRepayPlan> ss = preRepayTrail(contractNo, repayDateTime);
+                BalanceMgmt bm = new BalanceMgmt(repayAmount);
+                for (TAlLoanRepayPlan p : ss) {
+                    if (consumeRepayAmountPerTerm(repayDateTime, bm, p)) {
+                        break;
+                    }
                 }
-            }
-            TAlLoanTrxHistory h = new TAlLoanTrxHistory();
-            h.setAlContractNo(contractNo);
-            h.setTrxType(2);
-            h.setAmount(repayAmount);
-            h.setTrxDateTime(repayDateTime);
-            h.setTrxDetail(bm.balanceConsumeLogs());
-            h.setTrxTypeInfo("客户还款");
-            TAlLoanTrxHistory.create(h, true);
+                TAlLoanTrxHistory h = new TAlLoanTrxHistory();
+                h.setAlContractNo(contractNo);
+                h.setTrxType(2);
+                h.setAmount(repayAmount);
+                h.setTrxDateTime(repayDateTime);
+                h.setTrxDetail(bm.balanceConsumeLogs());
+                h.setTrxTypeInfo("客户还款");
+                TAlLoanTrxHistory.create(h, true);
 
-            if (bm.getBalance().compareTo(BigDecimal.ZERO) > 0) {
-                log.error("客户溢缴款{}元，合同号{}，总还款额={}", bm.getBalance(), contractNo, repayAmount);
-                throw new IllegalStateException("客户溢缴款，无法配账。。。。");
-            }
+                if (bm.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                    log.error("客户溢缴款{}元，合同号{}，总还款额={}", bm.getBalance(), contractNo, repayAmount);
+                    throw new IllegalStateException("客户溢缴款，无法配账。。。。");
+                }
+                return Result.success("repay success");
+            });
         } catch (SQLException e) {
             throw new IllegalStateException("repay fail", e);
         }
-        return Result.success("repay success");
     }
 
     private boolean consumeRepayAmountPerTermInGraceDate(LocalDateTime repayDateTime, BalanceMgmt preBalance, TAlLoanRepayPlan p) throws SQLException {
@@ -570,42 +571,45 @@ public class AlLoanContractRepay implements ILoanContractRepay {
         if (s == null) {
             return Result.fail("term not found");
         }
-        String beforChange = JsonUtil.toJson(s);
         try {
-            s.setLoanTermStatus("t");
-            s.setLastRepayDate(compensationDateTime.truncatedTo(ChronoUnit.DAYS));
-            s.setCompTermDate(compensationDateTime);
-            s.setCompPrincipal(s.getPrincipal());
-            s.setCompInterest(s.getInterest());
-            s.setCompOverdueFee(s.getOverdueFee());
-            s.setPrincipal(BigDecimal.ZERO);
-            s.setInterest(BigDecimal.ZERO);
-            s.setOverdueFee(BigDecimal.ZERO);
-            TAlLoanRepayPlan.update(s.getId(), s, true);
+            return Databases.executeTransactionally((connection, sqlExecutor) -> {
+                String beforChange = JsonUtil.toJson(s);
+                s.setLoanTermStatus("t");
+                s.setLastRepayDate(compensationDateTime.truncatedTo(ChronoUnit.DAYS));
+                s.setCompTermDate(compensationDateTime);
+                s.setCompPrincipal(s.getPrincipal());
+                s.setCompInterest(s.getInterest());
+                s.setCompOverdueFee(s.getOverdueFee());
+                s.setPrincipal(BigDecimal.ZERO);
+                s.setInterest(BigDecimal.ZERO);
+                s.setOverdueFee(BigDecimal.ZERO);
+                TAlLoanRepayPlan.update(s.getId(), s, true);
 
-            BigDecimal compTermTotalAmt = s.getCompOverdueFee().add(s.getCompInterest()).add(s.getCompPrincipal());
+                BigDecimal compTermTotalAmt = s.getCompOverdueFee().add(s.getCompInterest()).add(s.getCompPrincipal());
 
-            TAlLoanTrxHistory h = new TAlLoanTrxHistory();
-            h.setAlContractNo(contractNo);
-            h.setTrxType(3);
-            h.setAmount(compTermTotalAmt);
-            h.setTrxDateTime(compensationDateTime);
-            ObjectNode on = JsonUtil.createNewObjectNode();
-            on.put("loan_term", s.getLoanTerm());
-            on.put("comp_term_amt", compTermTotalAmt);
-            ObjectNode onDetail = JsonUtil.createNewObjectNode();
-            onDetail.put("overdue_fee", s.getCompOverdueFee());
-            onDetail.put("interest", s.getCompInterest());
-            onDetail.put("principal", s.getCompPrincipal());
-            onDetail.put("beforeTrx", beforChange);
-            onDetail.put("afterTrx", JsonUtil.toJson(s));
-            on.put("com_term_amt_details", onDetail);
-            h.setTrxDetail(on.toPrettyString());
-            h.setTrxTypeInfo("当期代偿");
-            TAlLoanTrxHistory.create(h, true);
+                TAlLoanTrxHistory h = new TAlLoanTrxHistory();
+                h.setAlContractNo(contractNo);
+                h.setTrxType(3);
+                h.setAmount(compTermTotalAmt);
+                h.setTrxDateTime(compensationDateTime);
+                ObjectNode on = JsonUtil.createNewObjectNode();
+                on.put("loan_term", s.getLoanTerm());
+                on.put("comp_term_amt", compTermTotalAmt);
+                ObjectNode onDetail = JsonUtil.createNewObjectNode();
+                onDetail.put("overdue_fee", s.getCompOverdueFee());
+                onDetail.put("interest", s.getCompInterest());
+                onDetail.put("principal", s.getCompPrincipal());
+                onDetail.put("beforeTrx", beforChange);
+                onDetail.put("afterTrx", JsonUtil.toJson(s));
+                on.put("com_term_amt_details", onDetail);
+                h.setTrxDetail(on.toPrettyString());
+                h.setTrxTypeInfo("当期代偿");
+                TAlLoanTrxHistory.create(h, true);
 
-            log.info("{}-{}:当期代偿,代偿罚{}，息{}，本{}", contractNo, term.getTerm(), s.getCompOverdueFee(), s.getCompInterest(), s.getCompPrincipal());
-            return Result.success("loan term compensation success");
+                log.info("{}-{}:当期代偿,代偿罚{}，息{}，本{}", contractNo, term.getTerm(), s.getCompOverdueFee(), s.getCompInterest(), s.getCompPrincipal());
+                return Result.success("loan term compensation success");
+
+            });
         } catch (SQLException e) {
             throw new IllegalStateException("loan term compensation fail", e);
         }
@@ -615,153 +619,155 @@ public class AlLoanContractRepay implements ILoanContractRepay {
     public Result loanCompensation(String contractNo, LocalDateTime compensationDateTime) {
         log.info("###############整笔代偿，合同号={}，时间={}", contractNo, compensationDateTime);
         try {
-            List<TAlLoanRepayPlan> allSs = queryAllRepayPlanByContractNo(contractNo);
-            if (isWholeLoanCompensation(allSs)) {
-                log.warn("该合同已经做过整笔代偿了，不必重复进行整笔代偿，一个合同只能做一次整笔代偿。");
-                return Result.success("whole loan compensation already complete");
-            }
-            List<TAlLoanRepayPlan> ss = preRepayTrail(contractNo, compensationDateTime);
-            List<TAlLoanRepayPlan> mergeSs = mergeAlLoanRepayPlan(allSs, ss);
-
-            ArrayNode logArray = JsonUtil.createNewJsonArray();
-
-            for (TAlLoanRepayPlan s : mergeSs) {
-
-                ObjectNode logArrayElement = JsonUtil.createNewObjectNode();
-
-                if (s.getPrincipal().compareTo(BigDecimal.ZERO) == 0 && s.getCompPrincipal().compareTo(BigDecimal.ZERO) == 0) {
-                    logArrayElement.put("beforeTrx", JsonUtil.toJson(s));
-                    s.setLoanTermStatus("l");
-                    s.setCompLoanDate(compensationDateTime);
-                    log.info("{}-{}:整笔代偿-已结清期次, 无需任何操作", contractNo, s.getLoanTerm());
-                    TAlLoanRepayPlan.update(s.getId(), s, true);
-
-                    logArrayElement.put("afterTrx", JsonUtil.toJson(s));
-                    logArrayElement.put("contract_no", contractNo);
-                    logArrayElement.put("loan_term", s.getLoanTerm());
-                    logArrayElement.put("term_state", "整笔代偿-已结清期次");
-                    logArrayElement.put("term_operation", "无需任何操作");
-
-                    logArray.add(logArrayElement);
-                    continue;
+            return Databases.executeTransactionally((connection, sqlExecutor) -> {
+                List<TAlLoanRepayPlan> allSs = queryAllRepayPlanByContractNo(contractNo);
+                if (isWholeLoanCompensation(allSs)) {
+                    log.warn("该合同已经做过整笔代偿了，不必重复进行整笔代偿，一个合同只能做一次整笔代偿。");
+                    return Result.success("whole loan compensation already complete");
                 }
-                s.setLastRepayDate(compensationDateTime.truncatedTo(ChronoUnit.DAYS));
-                String loanTermStatus = s.getLoanTermStatus();
-                long daysOfLoanCompensation = Duration.between(
-                        LocalDateTime.of(compensationDateTime.toLocalDate().withDayOfMonth(s.getRepayDate().getDayOfMonth()), LocalTime.MIN),
-                        compensationDateTime
-                ).toDays();
+                List<TAlLoanRepayPlan> ss = preRepayTrail(contractNo, compensationDateTime);
+                List<TAlLoanRepayPlan> mergeSs = mergeAlLoanRepayPlan(allSs, ss);
 
-                if (compensationDateTime.isBefore(s.getRepayDate())) {
-                    logArrayElement.put("beforeTrx", JsonUtil.toJson(s));
-                    s.setLoanTermStatus("l");
-                    s.setCompLoanDate(compensationDateTime);
-                    s.setCompPrincipal(s.getPrincipal());
-                    Map<String, Object> env = new HashMap<>();
-                    env.put("principal", s.getPrincipal());
-                    env.put("daysOfInterest", daysOfLoanCompensation);
-                    env.put("overdueFeeRate", s.getOverdueFeeRate());
-                    BigDecimal interest = (BigDecimal) AviatorEvaluator.compile("scale(principal*overdueFeeRate/100*daysOfInterest)", true).execute(env);
-                    s.setCompInterest(interest);
-                    s.setCompOverdueFee(s.getOverdueFee());
-                    s.setCompGuaranteeFee(s.getGuaranteeFee());
+                ArrayNode logArray = JsonUtil.createNewJsonArray();
 
-                    log.info("{}-{}:整笔代偿-未到期期次, 代偿本金{}，计提利息{}，担保费{}",
-                            contractNo, s.getLoanTerm(), s.getCompPrincipal(), s.getCompInterest(), s.getCompGuaranteeFee());
+                for (TAlLoanRepayPlan s : mergeSs) {
 
-                    s.setPrincipal(BigDecimal.ZERO);
-                    s.setInterest(BigDecimal.ZERO);
-                    s.setOverdueFee(BigDecimal.ZERO);
-                    s.setGuaranteeFee(BigDecimal.ZERO);
-                    TAlLoanRepayPlan.update(s.getId(), s, true);
+                    ObjectNode logArrayElement = JsonUtil.createNewObjectNode();
 
-                    logArrayElement.put("afterTrx", JsonUtil.toJson(s));
-                    logArrayElement.put("contract_no", contractNo);
-                    logArrayElement.put("loan_term", s.getLoanTerm());
-                    logArrayElement.put("term_state", "整笔代偿-已结清期次");
-                    logArrayElement.put("term_operation", "无需任何操作");
-
-                    logArray.add(logArrayElement);
-                    continue;
-                }
-                switch (loanTermStatus) {
-                    case "n":
+                    if (s.getPrincipal().compareTo(BigDecimal.ZERO) == 0 && s.getCompPrincipal().compareTo(BigDecimal.ZERO) == 0) {
                         logArrayElement.put("beforeTrx", JsonUtil.toJson(s));
                         s.setLoanTermStatus("l");
                         s.setCompLoanDate(compensationDateTime);
+                        log.info("{}-{}:整笔代偿-已结清期次, 无需任何操作", contractNo, s.getLoanTerm());
+                        TAlLoanRepayPlan.update(s.getId(), s, true);
 
+                        logArrayElement.put("afterTrx", JsonUtil.toJson(s));
+                        logArrayElement.put("contract_no", contractNo);
+                        logArrayElement.put("loan_term", s.getLoanTerm());
+                        logArrayElement.put("term_state", "整笔代偿-已结清期次");
+                        logArrayElement.put("term_operation", "无需任何操作");
+
+                        logArray.add(logArrayElement);
+                        continue;
+                    }
+                    s.setLastRepayDate(compensationDateTime.truncatedTo(ChronoUnit.DAYS));
+                    String loanTermStatus = s.getLoanTermStatus();
+                    long daysOfLoanCompensation = Duration.between(
+                            LocalDateTime.of(compensationDateTime.toLocalDate().withDayOfMonth(s.getRepayDate().getDayOfMonth()), LocalTime.MIN),
+                            compensationDateTime
+                    ).toDays();
+
+                    if (compensationDateTime.isBefore(s.getRepayDate())) {
+                        logArrayElement.put("beforeTrx", JsonUtil.toJson(s));
+                        s.setLoanTermStatus("l");
+                        s.setCompLoanDate(compensationDateTime);
                         s.setCompPrincipal(s.getPrincipal());
-                        s.setCompInterest(s.getInterest());
+                        Map<String, Object> env = new HashMap<>();
+                        env.put("principal", s.getPrincipal());
+                        env.put("daysOfInterest", daysOfLoanCompensation);
+                        env.put("overdueFeeRate", s.getOverdueFeeRate());
+                        BigDecimal interest = (BigDecimal) AviatorEvaluator.compile("scale(principal*overdueFeeRate/100*daysOfInterest)", true).execute(env);
+                        s.setCompInterest(interest);
                         s.setCompOverdueFee(s.getOverdueFee());
-                        s.setCompBreachFee(s.getBreachFee());
                         s.setCompGuaranteeFee(s.getGuaranteeFee());
 
-                        log.info("{}-{}:整笔代偿-到期未代偿期次, 代偿本金{}，利息{}，罚息{}，违约金{}，担保费{}",
-                                contractNo, s.getLoanTerm(), s.getCompPrincipal(), s.getCompInterest(), s.getCompOverdueFee(), s.getCompBreachFee(), s.getCompGuaranteeFee());
+                        log.info("{}-{}:整笔代偿-未到期期次, 代偿本金{}，计提利息{}，担保费{}",
+                                contractNo, s.getLoanTerm(), s.getCompPrincipal(), s.getCompInterest(), s.getCompGuaranteeFee());
 
                         s.setPrincipal(BigDecimal.ZERO);
                         s.setInterest(BigDecimal.ZERO);
                         s.setOverdueFee(BigDecimal.ZERO);
-                        s.setBreachFee(BigDecimal.ZERO);
                         s.setGuaranteeFee(BigDecimal.ZERO);
                         TAlLoanRepayPlan.update(s.getId(), s, true);
 
                         logArrayElement.put("afterTrx", JsonUtil.toJson(s));
                         logArrayElement.put("contract_no", contractNo);
                         logArrayElement.put("loan_term", s.getLoanTerm());
-                        logArrayElement.put("term_state", "整笔代偿-到期未代偿期次");
-                        logArrayElement.put("term_operation", "代偿本金{}，利息{}，罚息{}，违约金{}，担保费{}");
-                        logArrayElement.put("comp_principal", s.getCompPrincipal());
-                        logArrayElement.put("comp_interest", s.getCompInterest());
-                        logArrayElement.put("comp_overdue_fee", s.getCompOverdueFee());
-                        logArrayElement.put("comp_breach_fee", s.getCompBreachFee());
-                        logArrayElement.put("comp_guarantee_fee", s.getCompGuaranteeFee());
+                        logArrayElement.put("term_state", "整笔代偿-已结清期次");
+                        logArrayElement.put("term_operation", "无需任何操作");
 
                         logArray.add(logArrayElement);
-                        break;
-                    case "t":
-                        logArrayElement.put("beforeTrx", JsonUtil.toJson(s));
-                        s.setLoanTermStatus("l");
-                        s.setCompLoanDate(compensationDateTime);
+                        continue;
+                    }
+                    switch (loanTermStatus) {
+                        case "n":
+                            logArrayElement.put("beforeTrx", JsonUtil.toJson(s));
+                            s.setLoanTermStatus("l");
+                            s.setCompLoanDate(compensationDateTime);
 
-                        s.setCompGuaranteeFee(s.getGuaranteeFee());
-                        s.setCompBreachFee(s.getBreachFee());
-                        s.setCompTermLateFee(s.getTermLateFee());
-                        log.info("{}-{}:整笔代偿-到期已代偿期次, 代偿期款滞纳金{}，违约金{}，担保费{}", contractNo, s.getLoanTerm(), s.getCompTermLateFee(), s.getCompBreachFee(), s.getCompGuaranteeFee());
-                        s.setGuaranteeFee(BigDecimal.ZERO);
-                        s.setBreachFee(BigDecimal.ZERO);
-                        s.setTermLateFee(BigDecimal.ZERO);
-                        TAlLoanRepayPlan.update(s.getId(), s, true);
+                            s.setCompPrincipal(s.getPrincipal());
+                            s.setCompInterest(s.getInterest());
+                            s.setCompOverdueFee(s.getOverdueFee());
+                            s.setCompBreachFee(s.getBreachFee());
+                            s.setCompGuaranteeFee(s.getGuaranteeFee());
 
-                        logArrayElement.put("afterTrx", JsonUtil.toJson(s));
-                        logArrayElement.put("contract_no", contractNo);
-                        logArrayElement.put("loan_term", s.getLoanTerm());
-                        logArrayElement.put("term_state", "整笔代偿-到期已代偿期次");
-                        logArrayElement.put("term_operation", "代偿期款滞纳金{}，违约金{}，担保费{}");
-                        logArrayElement.put("comp_term_late_fee", s.getCompTermLateFee());
-                        logArrayElement.put("comp_breach_fee", s.getCompBreachFee());
-                        logArrayElement.put("comp_guarantee_fee", s.getCompGuaranteeFee());
+                            log.info("{}-{}:整笔代偿-到期未代偿期次, 代偿本金{}，利息{}，罚息{}，违约金{}，担保费{}",
+                                    contractNo, s.getLoanTerm(), s.getCompPrincipal(), s.getCompInterest(), s.getCompOverdueFee(), s.getCompBreachFee(), s.getCompGuaranteeFee());
 
-                        logArray.add(logArrayElement);
-                        break;
-                    case "l":
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("cannot support the loan term status:" + loanTermStatus);
+                            s.setPrincipal(BigDecimal.ZERO);
+                            s.setInterest(BigDecimal.ZERO);
+                            s.setOverdueFee(BigDecimal.ZERO);
+                            s.setBreachFee(BigDecimal.ZERO);
+                            s.setGuaranteeFee(BigDecimal.ZERO);
+                            TAlLoanRepayPlan.update(s.getId(), s, true);
+
+                            logArrayElement.put("afterTrx", JsonUtil.toJson(s));
+                            logArrayElement.put("contract_no", contractNo);
+                            logArrayElement.put("loan_term", s.getLoanTerm());
+                            logArrayElement.put("term_state", "整笔代偿-到期未代偿期次");
+                            logArrayElement.put("term_operation", "代偿本金{}，利息{}，罚息{}，违约金{}，担保费{}");
+                            logArrayElement.put("comp_principal", s.getCompPrincipal());
+                            logArrayElement.put("comp_interest", s.getCompInterest());
+                            logArrayElement.put("comp_overdue_fee", s.getCompOverdueFee());
+                            logArrayElement.put("comp_breach_fee", s.getCompBreachFee());
+                            logArrayElement.put("comp_guarantee_fee", s.getCompGuaranteeFee());
+
+                            logArray.add(logArrayElement);
+                            break;
+                        case "t":
+                            logArrayElement.put("beforeTrx", JsonUtil.toJson(s));
+                            s.setLoanTermStatus("l");
+                            s.setCompLoanDate(compensationDateTime);
+
+                            s.setCompGuaranteeFee(s.getGuaranteeFee());
+                            s.setCompBreachFee(s.getBreachFee());
+                            s.setCompTermLateFee(s.getTermLateFee());
+                            log.info("{}-{}:整笔代偿-到期已代偿期次, 代偿期款滞纳金{}，违约金{}，担保费{}", contractNo, s.getLoanTerm(), s.getCompTermLateFee(), s.getCompBreachFee(), s.getCompGuaranteeFee());
+                            s.setGuaranteeFee(BigDecimal.ZERO);
+                            s.setBreachFee(BigDecimal.ZERO);
+                            s.setTermLateFee(BigDecimal.ZERO);
+                            TAlLoanRepayPlan.update(s.getId(), s, true);
+
+                            logArrayElement.put("afterTrx", JsonUtil.toJson(s));
+                            logArrayElement.put("contract_no", contractNo);
+                            logArrayElement.put("loan_term", s.getLoanTerm());
+                            logArrayElement.put("term_state", "整笔代偿-到期已代偿期次");
+                            logArrayElement.put("term_operation", "代偿期款滞纳金{}，违约金{}，担保费{}");
+                            logArrayElement.put("comp_term_late_fee", s.getCompTermLateFee());
+                            logArrayElement.put("comp_breach_fee", s.getCompBreachFee());
+                            logArrayElement.put("comp_guarantee_fee", s.getCompGuaranteeFee());
+
+                            logArray.add(logArrayElement);
+                            break;
+                        case "l":
+                            break;
+                        default:
+                            throw new UnsupportedOperationException("cannot support the loan term status:" + loanTermStatus);
+                    }
                 }
-            }
-            TAlLoanTrxHistory h = new TAlLoanTrxHistory();
-            h.setAlContractNo(contractNo);
-            h.setTrxType(4);
-            h.setAmount(new BigDecimal("0"));
-            h.setTrxDateTime(compensationDateTime);
-            h.setTrxDetail(logArray.toPrettyString());
-            h.setTrxTypeInfo("整笔代偿");
-            TAlLoanTrxHistory.create(h, true);
+                TAlLoanTrxHistory h = new TAlLoanTrxHistory();
+                h.setAlContractNo(contractNo);
+                h.setTrxType(4);
+                h.setAmount(new BigDecimal("0"));
+                h.setTrxDateTime(compensationDateTime);
+                h.setTrxDetail(logArray.toPrettyString());
+                h.setTrxTypeInfo("整笔代偿");
+                TAlLoanTrxHistory.create(h, true);
 
-            return Result.success("whole loan compensation complete");
+                return Result.success("whole loan compensation complete");
+            });
         } catch (SQLException e) {
-            throw new IllegalStateException("Whole contract compensation", e);
+            throw new IllegalStateException("whole loan compensation fail", e);
         }
     }
 
