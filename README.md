@@ -16,6 +16,7 @@
 - 到期还款日=dayOfMonthRepay
 - 宽限期=dayOfGrace
 - 代偿期=dayOfCompensation
+- 溢缴款=overPayment
 
 # 贷款还款计算规则
 - 资方角度
@@ -48,3 +49,10 @@
             6. 代偿担保费
             7. 代偿本金
     - 总之，每期都有固定的本金+利息+担保费，逾期后，罚息和违约金会按天滚，终结他们按天滚的是期款滞纳金，终结期款滞纳金按天滚的是贷款滞纳金。
+    
+# 技术实现
+> 所用到的技术框架如下：
+1. ORM=objective-sql
+2. 公式引擎=aviator
+3. json处理=jackson
+4. 日志=slf4j+logback
