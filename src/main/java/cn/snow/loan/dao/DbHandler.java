@@ -11,6 +11,8 @@ import com.github.braisdom.objsql.Logger;
 import com.github.braisdom.objsql.LoggerFactory;
 import com.github.braisdom.objsql.util.StringUtil;
 
+import cn.snow.loan.utils.ConfigProperties;
+
 public enum DbHandler {
 
     INIT;
@@ -25,11 +27,9 @@ public enum DbHandler {
         @Override
         public Connection getConnection(String dataSourceName) throws SQLException {
             try {
-                Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
-                String url = "jdbc:mysql://localhost:3306/al_loan";
-                String user = "root";
-                String password = "123456";
-                return DriverManager.getConnection(url, user, password);
+                ConfigProperties p = new ConfigProperties();
+                Class.forName(p.getDriverClass()).newInstance();
+                return DriverManager.getConnection(p.getUrl(), p.getUser(), p.getPassword());
             } catch (SQLException e) {
                 throw e;
             } catch (Exception e) {
