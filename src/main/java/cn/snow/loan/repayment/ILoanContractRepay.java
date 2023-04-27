@@ -13,6 +13,7 @@ public interface ILoanContractRepay {
 
     Result setOverdueFlag(String contractNo, LocalDateTime checkDateTime);
 
+    @SuppressWarnings("all")
     List<?> preRepayTrail(String contractNo, LocalDateTime repayDateTime);
 
     Result repay(String contractNo, LocalDateTime repayDateTime, BigDecimal repayAmount);

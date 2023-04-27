@@ -3,7 +3,7 @@ package cn.snow.loan.repayment;
 import java.math.BigDecimal;
 
 import org.junit.Test;
-
+@SuppressWarnings("all")
 public class BalanceMgmtTest {
 
     @Test

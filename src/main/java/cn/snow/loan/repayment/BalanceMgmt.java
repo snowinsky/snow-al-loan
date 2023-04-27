@@ -26,32 +26,32 @@ public class BalanceMgmt {
         balanceConsumeLog = balanceConsumeLogRoot.putArray("repay_pair_detail_array");
     }
 
-//    public ConsumeResult consumeBalance(BigDecimal amt, String amtTitle){
-//        BigDecimal preBalance = new BigDecimal(balance.toString());
-//        balance = balance.subtract(amt);
-//        if (balance.compareTo(BigDecimal.ZERO) > 0) {
-//            log.info("还款{}：preBalance={}, spendAmt={}, endBalance={}", amtTitle, preBalance, amt, balance);
-//            ObjectNode consumeDetail = JsonUtil.createNewObjectNode();
-//            consumeDetail.put("pair_item_title", amtTitle);
-//            consumeDetail.put("pre_balance", preBalance);
-//            consumeDetail.put("pair_amt", amt);
-//            consumeDetail.put("end_balance", balance);
-//            consumeDetail.put("pair_amt_balance", BigDecimal.ZERO);
-//            balanceConsumeLog.add(consumeDetail);
-//            return sufficient(BigDecimal.ZERO);
-//        } else {
-//            log.info("还款{}：preBalance={}, spendAmt={}, endBalance={}", amtTitle, preBalance, amt, 0);
-//            BigDecimal pairAmtBalance = new BigDecimal("-1").multiply(balance);
-//            ObjectNode consumeDetail = JsonUtil.createNewObjectNode();
-//            consumeDetail.put("pair_item_title", amtTitle);
-//            consumeDetail.put("pre_balance", preBalance);
-//            consumeDetail.put("pair_amt", amt);
-//            consumeDetail.put("end_balance", 0);
-//            consumeDetail.put("pair_amt_balance", pairAmtBalance);
-//            balanceConsumeLog.add(consumeDetail);
-//            return insufficient(pairAmtBalance);
-//        }
-//    }
+    public ConsumeResult consumeBalance(BigDecimal amt, String amtTitle){
+        BigDecimal preBalance = new BigDecimal(balance.toString());
+        balance = balance.subtract(amt);
+        if (balance.compareTo(BigDecimal.ZERO) > 0) {
+            log.info("还款{}：preBalance={}, spendAmt={}, endBalance={}", amtTitle, preBalance, amt, balance);
+            ObjectNode consumeDetail = JsonUtil.createNewObjectNode();
+            consumeDetail.put("pair_item_title", amtTitle);
+            consumeDetail.put("pre_balance", preBalance);
+            consumeDetail.put("pair_amt", amt);
+            consumeDetail.put("end_balance", balance);
+            consumeDetail.put("pair_amt_balance", BigDecimal.ZERO);
+            balanceConsumeLog.add(consumeDetail);
+            return sufficient(BigDecimal.ZERO);
+        } else {
+            log.info("还款{}：preBalance={}, spendAmt={}, endBalance={}", amtTitle, preBalance, amt, 0);
+            BigDecimal pairAmtBalance = new BigDecimal("-1").multiply(balance);
+            ObjectNode consumeDetail = JsonUtil.createNewObjectNode();
+            consumeDetail.put("pair_item_title", amtTitle);
+            consumeDetail.put("pre_balance", preBalance);
+            consumeDetail.put("pair_amt", amt);
+            consumeDetail.put("end_balance", 0);
+            consumeDetail.put("pair_amt_balance", pairAmtBalance);
+            balanceConsumeLog.add(consumeDetail);
+            return insufficient(pairAmtBalance);
+        }
+    }
 
     public ConsumeResult consumeBalance(BigDecimal amt, String amtTitle, String contractNo, Integer loanTerm){
         BigDecimal preBalance = new BigDecimal(balance.toString());

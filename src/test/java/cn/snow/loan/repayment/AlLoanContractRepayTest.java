@@ -23,6 +23,7 @@ import cn.snow.loan.plan.funding.prepare.LoanRate;
 import cn.snow.loan.plan.funding.prepare.LoanTerm;
 import cn.snow.loan.utils.JsonUtil;
 
+@SuppressWarnings("all")
 public class AlLoanContractRepayTest {
 
     Logger log = LoggerFactory.getLogger(AlLoanContractRepayTest.class);

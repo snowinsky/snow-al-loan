@@ -17,6 +17,7 @@ import com.github.braisdom.objsql.annotations.PrimaryKey;
  * t_al_loan_trx_history
  * @author 
  */
+@SuppressWarnings("all")
 @DomainModel(tableName = "t_al_loan_trx_history")
 public class TAlLoanTrxHistory implements Serializable {
     @PrimaryKey

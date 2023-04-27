@@ -109,4 +109,12 @@ public class LoanPerTerm {
     public void setMonthInYear(int monthInYear) {
         this.monthInYear = monthInYear;
     }
+
+    public LocalDate getRepaymentDate() {
+        return repaymentDate;
+    }
+
+    public void setRepaymentDate(LocalDate repaymentDate) {
+        this.repaymentDate = repaymentDate;
+    }
 }

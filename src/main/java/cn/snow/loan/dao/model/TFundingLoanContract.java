@@ -10,6 +10,7 @@ import com.github.braisdom.objsql.annotations.PrimaryKey;
 import com.github.braisdom.objsql.annotations.Relation;
 import com.github.braisdom.objsql.relation.RelationType;
 
+@SuppressWarnings("all")
 @DomainModel(tableName = "t_funding_loan_contract")
 public class TFundingLoanContract {
     @PrimaryKey

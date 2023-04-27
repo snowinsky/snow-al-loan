@@ -14,6 +14,7 @@ import cn.snow.loan.plan.funding.prepare.LoanAmount;
 import cn.snow.loan.plan.funding.prepare.LoanRate;
 import cn.snow.loan.plan.funding.prepare.LoanTerm;
 
+@SuppressWarnings("all")
 public class FundingLoanContractRepayTest {
 
     FundingLoanContractRepay tested = new FundingLoanContractRepay();

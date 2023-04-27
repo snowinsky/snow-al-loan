@@ -12,6 +12,7 @@ import com.github.braisdom.objsql.annotations.PrimaryKey;
  * t_al_loan_contract
  * @author 
  */
+@SuppressWarnings("all")
 @DomainModel(tableName = "t_al_loan_contract")
 public class TAlLoanContract implements Serializable {
     @PrimaryKey

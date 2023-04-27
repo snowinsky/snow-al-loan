@@ -10,7 +10,7 @@ import com.googlecode.aviator.AviatorEvaluator;
 import org.junit.Test;
 
 import cn.snow.loan.repayment.aviator.plugin.RateMultiplyFunction;
-
+@SuppressWarnings("all")
 public class AviatorTest {
 
 

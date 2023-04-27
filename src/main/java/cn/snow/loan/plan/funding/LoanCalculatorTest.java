@@ -3,6 +3,9 @@ package cn.snow.loan.plan.funding;
 
 import java.math.BigDecimal;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.snow.loan.plan.funding.prepare.LoanAmount;
 import cn.snow.loan.plan.funding.prepare.LoanRate;
 import cn.snow.loan.plan.funding.prepare.LoanTerm;
@@ -11,6 +14,8 @@ import cn.snow.loan.plan.funding.prepare.LoanTerm;
  * Design it on 1/14/16.
  */
 public class LoanCalculatorTest {
+
+    Logger log = LoggerFactory.getLogger(getClass());
 
     private int totalMonth;
     private BigDecimal totalMoney;
@@ -36,7 +41,7 @@ public class LoanCalculatorTest {
                 LoanAmount.valueOf(totalMoney),
                 LoanTerm.monthTerm(totalMonth),
                 LoanRate.yearRate(rate));
-        System.out.println(loan);
+        log.info("{}", loan);
     }
 
     public void testACMCalculate() {
@@ -45,7 +50,7 @@ public class LoanCalculatorTest {
                 LoanAmount.valueOf(totalMoney),
                 LoanTerm.monthTerm(totalMonth),
                 LoanRate.yearRate(rate));
-        System.out.println(loan);
+        log.info("{}", loan);
     }
 
 }

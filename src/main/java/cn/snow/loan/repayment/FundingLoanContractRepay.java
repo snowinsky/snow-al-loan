@@ -22,6 +22,7 @@ import cn.snow.loan.plan.funding.Loan;
 import cn.snow.loan.plan.funding.LoanPerTerm;
 import cn.snow.loan.plan.funding.prepare.LoanTerm;
 
+@SuppressWarnings("all")
 public class FundingLoanContractRepay implements ILoanContractRepay {
     @Override
     public Result initRepayPlan(ILoanContract contract) {
