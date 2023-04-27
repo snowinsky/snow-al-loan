@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import cn.snow.loan.contract.AlLoanContract;
 import cn.snow.loan.contract.FundingLoanContract;
 import cn.snow.loan.dao.DbHandler;
-import cn.snow.loan.dao.model.TAlLoanRepayPlan;
 import cn.snow.loan.dao.model.TAlLoanTrxHistory;
 import cn.snow.loan.plan.al.prepare.AlLoanRate;
 import cn.snow.loan.plan.funding.prepare.LoanAmount;
@@ -191,7 +190,12 @@ public class AlLoanContractRepayTest {
         //整笔代偿
         tested.loanCompensation(contractNo, LocalDateTime.of(2023, 3, 22, 11, 12));
 
-        List<TAlLoanRepayPlan>  l = tested.preRepayTrail(contractNo, LocalDateTime.of(2023, 4, 22, 11, 12));
-        l.forEach(System.out::println);
+        //整笔代偿后客户又还款
+        tested.repay(contractNo,
+                LocalDateTime.of(2023, 4, 17, 11, 12),
+                new BigDecimal("1000"));
+
+        /*List<TAlLoanRepayPlan>  l = tested.preRepayTrail(contractNo, LocalDateTime.of(2023, 4, 22, 11, 12));
+        l.forEach(System.out::println);*/
     }
 }
