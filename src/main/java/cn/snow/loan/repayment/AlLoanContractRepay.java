@@ -32,7 +32,7 @@ import cn.snow.loan.plan.al.GuaranteeFeePerTerm;
 import cn.snow.loan.plan.funding.LoanPerTerm;
 import cn.snow.loan.plan.funding.prepare.LoanTerm;
 import cn.snow.loan.repayment.BalanceMgmt.ConsumeResult;
-import cn.snow.loan.repayment.aviator.plugin.AviatorExecutor;
+import cn.snow.loan.repayment.aviator.AviatorExecutor;
 import cn.snow.loan.utils.JsonUtil;
 
 @SuppressWarnings("all")
