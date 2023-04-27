@@ -27,6 +27,7 @@ import cn.snow.loan.contract.ILoanContract;
 import cn.snow.loan.dao.model.TAlLoanContract;
 import cn.snow.loan.dao.model.TAlLoanRepayPlan;
 import cn.snow.loan.dao.model.TAlLoanTrxHistory;
+import cn.snow.loan.dao.model.TOverpayment;
 import cn.snow.loan.plan.al.AlLoan;
 import cn.snow.loan.plan.al.GuaranteeFeePerTerm;
 import cn.snow.loan.plan.funding.LoanPerTerm;
@@ -294,6 +295,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     /**
      * 判断期次是否已经整笔代偿
+     *
      * @param ss
      * @return
      */
@@ -314,6 +316,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     /**
      * 客户还款
+     *
      * @param contractNo
      * @param repayDateTime
      * @param repayAmount
@@ -342,7 +345,11 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
                 if (bm.getBalance().compareTo(BigDecimal.ZERO) > 0) {
                     log.error("客户溢缴款{}元，合同号{}，总还款额={}", bm.getBalance(), contractNo, repayAmount);
-                    throw new IllegalStateException("客户溢缴款，无法配账。。。。");
+                    TOverpayment t = new TOverpayment();
+                    t.setAlContractNo(contractNo);
+                    t.setAmount(bm.getBalance());
+                    t.setTrxDateTime(repayDateTime);
+                    TOverpayment.create(t, true);
                 }
                 return Result.success("repay success");
             });
@@ -353,6 +360,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     /**
      * 客户还款配账，宽限期内的配账逻辑
+     *
      * @param repayDateTime
      * @param preBalance
      * @param p
@@ -477,6 +485,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     /**
      * 客户还款配账，超过宽限期时的配账逻辑
+     *
      * @param repayDateTime
      * @param preBalance
      * @param p
@@ -595,6 +604,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     /**
      * 将客户还款配账到各个科目，返回是否配账完成
+     *
      * @param repayDateTime
      * @param preBalance
      * @param p
@@ -610,6 +620,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     /**
      * 当期代偿
+     *
      * @param contractNo
      * @param term
      * @param compensationDateTime
@@ -669,6 +680,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
 
     /**
      * 整笔代偿
+     *
      * @param contractNo
      * @param compensationDateTime
      * @return
@@ -833,6 +845,7 @@ public class AlLoanContractRepay implements ILoanContractRepay {
     /**
      * 整笔代偿前，先获取代偿范围，先获取数据库中的所有期次，再试算一下需要还款的期次，然后merge到一起
      * merge的原则就是掐头要尾，掐头是因为头部都是已经还清贷款的期次，要尾是因为尾部本金需要提前代偿
+     *
      * @param allRepayPlans
      * @param repayRepayPlans
      * @return

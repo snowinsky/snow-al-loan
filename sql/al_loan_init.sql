@@ -117,3 +117,17 @@ CREATE TABLE t_al_loan_trx_history
     PRIMARY KEY pk_al_loan_trx_history (id),
     FULLTEXT INDEX idx_al_loan_trx_history_al_contract_no (al_contract_no)
 ) COMMENT '记录助贷的合同中的还款计划中每一次的变化历史';
+
+-- -----------------------------------------------------------------------------------
+-- 溢缴款记录表
+-- ___________________________________________________________________________________
+drop table if exists t_overpayment;
+CREATE TABLE t_overpayment
+(
+    id             BIGINT         NOT NULL AUTO_INCREMENT,
+    al_contract_no VARCHAR(50)    NOT NULL,
+    amount         DECIMAL(20, 2) NOT NULL,
+    trx_date_time  DATETIME       NOT NULL,
+    PRIMARY KEY pk_overpayment (id),
+    FULLTEXT INDEX idx_overpayment (al_contract_no)
+) COMMENT '记录助贷的合同中的溢缴款';

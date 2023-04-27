@@ -114,7 +114,6 @@ public class TAlLoanRepayPlan implements Serializable {
      * 上一次的还款时间
      */
     @Column
-
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm",timezone = "Asia/Shanghai")
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
@@ -149,12 +148,18 @@ public class TAlLoanRepayPlan implements Serializable {
      * 整笔代偿具体时间
      */
     @Column
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm",timezone = "Asia/Shanghai")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime compLoanDate;
 
     /**
      * 当期代偿具体时间
      */
     @Column
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm",timezone = "Asia/Shanghai")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime compTermDate;
 
     /**
