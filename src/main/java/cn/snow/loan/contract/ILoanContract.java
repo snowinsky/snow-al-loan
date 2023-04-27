@@ -4,9 +4,9 @@ import java.time.LocalDate;
 
 import cn.snow.loan.plan.funding.ILoanCalculator;
 import cn.snow.loan.plan.funding.Loan;
-import cn.snow.loan.plan.funding.prepare.LoanAmount;
-import cn.snow.loan.plan.funding.prepare.LoanRate;
-import cn.snow.loan.plan.funding.prepare.LoanTerm;
+import cn.snow.loan.plan.funding.LoanAmount;
+import cn.snow.loan.plan.funding.LoanRate;
+import cn.snow.loan.plan.funding.LoanTerm;
 
 public interface ILoanContract {
 

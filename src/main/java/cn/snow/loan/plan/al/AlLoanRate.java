@@ -1,6 +1,6 @@
-package cn.snow.loan.plan.al.prepare;
+package cn.snow.loan.plan.al;
 
-import cn.snow.loan.plan.funding.prepare.LoanRate;
+import cn.snow.loan.plan.funding.LoanRate;
 
 public class AlLoanRate {
 

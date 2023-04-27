@@ -17,10 +17,10 @@ import cn.snow.loan.contract.AlLoanContract;
 import cn.snow.loan.contract.FundingLoanContract;
 import cn.snow.loan.dao.DbHandler;
 import cn.snow.loan.dao.model.TAlLoanTrxHistory;
-import cn.snow.loan.plan.al.prepare.AlLoanRate;
-import cn.snow.loan.plan.funding.prepare.LoanAmount;
-import cn.snow.loan.plan.funding.prepare.LoanRate;
-import cn.snow.loan.plan.funding.prepare.LoanTerm;
+import cn.snow.loan.plan.al.AlLoanRate;
+import cn.snow.loan.plan.funding.LoanAmount;
+import cn.snow.loan.plan.funding.LoanRate;
+import cn.snow.loan.plan.funding.LoanTerm;
 import cn.snow.loan.utils.JsonUtil;
 
 @SuppressWarnings("all")

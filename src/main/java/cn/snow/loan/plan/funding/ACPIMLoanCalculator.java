@@ -4,8 +4,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import cn.snow.loan.plan.funding.prepare.LoanRate;
-
 /**
  * 等额本息还款法
  * 等额本息计算公式：每月还款额=贷款本金×[月利率×(1+月利率)^还款月数]÷{[(1+月利率)^还款月数]-1}

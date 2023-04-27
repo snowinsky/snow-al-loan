@@ -1,4 +1,4 @@
-package cn.snow.loan.plan.funding.prepare;
+package cn.snow.loan.plan.funding;
 
 import java.util.StringJoiner;
 

@@ -20,7 +20,7 @@ import cn.snow.loan.dao.model.TFundingLoanContract;
 import cn.snow.loan.dao.model.TFundingLoanRepayPlan;
 import cn.snow.loan.plan.funding.Loan;
 import cn.snow.loan.plan.funding.LoanPerTerm;
-import cn.snow.loan.plan.funding.prepare.LoanTerm;
+import cn.snow.loan.plan.funding.LoanTerm;
 
 @SuppressWarnings("all")
 public class FundingLoanContractRepay implements ILoanContractRepay {

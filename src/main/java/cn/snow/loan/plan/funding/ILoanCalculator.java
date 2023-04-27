@@ -2,10 +2,6 @@ package cn.snow.loan.plan.funding;
 
 import java.math.BigDecimal;
 
-import cn.snow.loan.plan.funding.prepare.LoanAmount;
-import cn.snow.loan.plan.funding.prepare.LoanRate;
-import cn.snow.loan.plan.funding.prepare.LoanTerm;
-
 /**
  * Design it on 1/14/16.
  */

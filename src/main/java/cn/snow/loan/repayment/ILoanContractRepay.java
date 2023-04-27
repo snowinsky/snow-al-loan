@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import cn.snow.loan.contract.ILoanContract;
-import cn.snow.loan.plan.funding.prepare.LoanTerm;
+import cn.snow.loan.plan.funding.LoanTerm;
 
 public interface ILoanContractRepay {
 
