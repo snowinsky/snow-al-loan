@@ -81,7 +81,7 @@ public class AlLoanContractRepayTest {
         contract.setDayOfGrace(6);
         contract.setFirstRepayDate(LocalDate.of(2022, 9, 12));
 
-        AlLoanRate alLoanRate = new AlLoanRate(LoanRate.yearRateBeforePercent(23.9));
+        AlLoanRate alLoanRate = new AlLoanRate(LoanRate.yearRateBeforePercent(23.898));
         alLoanRate.setBreachFeeRate(LoanRate.dayRateBeforePercent(0.062));
         alLoanRate.setTermLateFeeRate(LoanRate.dayRateBeforePercent(0.097));
         alLoanRate.setLoanLateFeeRate(LoanRate.dayRateBeforePercent(0.097));
