@@ -18,7 +18,7 @@ import com.github.braisdom.objsql.annotations.PrimaryKey;
  * @author 
  */
 @SuppressWarnings("all")
-@DomainModel(tableName = "t_al_loan_contract")
+@DomainModel(tableName = "t_overpayment")
 public class TOverpayment implements Serializable {
     @PrimaryKey
     private Long id;
