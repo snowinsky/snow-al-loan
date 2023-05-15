@@ -9,8 +9,9 @@ import java.io.Serializable;
 public class ResponseData<T> implements Serializable {
 
     public static final String CODE_SUCCESS = "0000";
-    public static final String CODE_ARG_FAIL = "1000";
+    public static final String CODE_ARG_FAIL = "0001";
     public static final String CODE_ERROR = "2000";
+    public static final String CODE_PROCESS = "1000";
     public static final String MESSAGE_SUCCESS = "交易成功";
     public static final String MESSAGE_FAIL = "请求参数异常";
     public static final String MESSAGE_ERROR = "业务异常";

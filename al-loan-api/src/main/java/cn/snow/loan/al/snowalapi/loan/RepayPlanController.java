@@ -14,12 +14,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import cn.snow.loan.al.snowalapi.config.log.aop.annotation.PrintInAndOutLog;
 import cn.snow.loan.al.snowalapi.config.version.ApiVersion;
+import cn.snow.loan.al.snowalapi.loan.entity.InAlLoanParam;
 import cn.snow.loan.al.snowalapi.loan.entity.InDraftAlLoanContract;
 import cn.snow.loan.al.snowalapi.loan.entity.OutDraftAlLoanRepayPlan;
 import cn.snow.loan.al.snowalapi.loan.entity.ResponseData;
 import cn.snow.loan.al.snowalapi.loan.entity.TermAlLoanRepayPlan;
 import cn.snow.loan.contract.AlLoanContract;
 import cn.snow.loan.contract.FundingLoanContract;
+import cn.snow.loan.dao.model.TAlLoanRepayPlan;
 import cn.snow.loan.plan.al.AlLoan;
 import cn.snow.loan.plan.al.AlLoanRate;
 import cn.snow.loan.plan.al.GuaranteeFeePerTerm;
@@ -94,6 +96,13 @@ public class RepayPlanController {
             l.add(trp);
         }
         return l;
+    }
+
+
+    @PostMapping(value = "/before-repay", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PrintInAndOutLog
+    public ResponseData<List<TAlLoanRepayPlan>> beforeReplay(@RequestBody @Validated InAlLoanParam alLoanParam) {
+        return ResponseData.success(CONTRACT_REPAY.preRepayTrail(alLoanParam.getContractNo(), alLoanParam.getOperationDateTime()));
     }
 
 

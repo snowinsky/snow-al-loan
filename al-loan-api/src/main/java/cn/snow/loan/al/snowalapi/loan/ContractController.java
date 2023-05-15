@@ -1,9 +1,13 @@
 package cn.snow.loan.al.snowalapi.loan;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.List;
 
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,8 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import cn.snow.loan.al.snowalapi.config.log.aop.annotation.PrintInAndOutLog;
 import cn.snow.loan.al.snowalapi.config.version.ApiVersion;
 import cn.snow.loan.al.snowalapi.loan.entity.InAlLoanContract;
+import cn.snow.loan.al.snowalapi.loan.entity.ResponseData;
 import cn.snow.loan.contract.AlLoanContract;
 import cn.snow.loan.contract.FundingLoanContract;
+import cn.snow.loan.dao.model.TAlLoanContract;
 import cn.snow.loan.plan.al.AlLoanRate;
 import cn.snow.loan.plan.funding.LoanAmount;
 import cn.snow.loan.plan.funding.LoanRate;
@@ -35,7 +41,7 @@ public class ContractController {
 
     @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
     @PrintInAndOutLog
-    public Result createNewContract(@RequestBody @Validated InAlLoanContract alLoanContractIn) {
+    public ResponseData<Result> createNewContract(@RequestBody @Validated InAlLoanContract alLoanContractIn) {
         FundingLoanContract contract = new FundingLoanContract(
                 LoanAmount.valueOf(BigDecimal.valueOf(alLoanContractIn.getLoanAmount())),
                 LoanTerm.monthTerm(alLoanContractIn.getLoanTerm()),
@@ -55,6 +61,26 @@ public class ContractController {
         alContract.dayOfCompensation(alLoanContractIn.getDayOfCompensation());
         alContract.contractNo("F" + contract.contractNo());
 
-        return CONTRACT_REPAY.initRepayPlan(alContract);
+        return ResponseData.success(CONTRACT_REPAY.initRepayPlan(alContract));
+    }
+
+    @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PrintInAndOutLog
+    public ResponseData<List<TAlLoanContract>> getAllContract() {
+        try {
+            return ResponseData.success(TAlLoanContract.queryAll());
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @GetMapping(value = "/contract/{contractNo}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PrintInAndOutLog
+    public ResponseData<List<TAlLoanContract>> getOneContract(@PathVariable("contractNo") String contractNo) {
+        try {
+            return ResponseData.success(TAlLoanContract.query("contract_no = ?", contractNo));
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
