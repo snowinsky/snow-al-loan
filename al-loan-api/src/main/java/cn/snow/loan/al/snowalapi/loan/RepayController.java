@@ -12,6 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @Slf4j
 @ApiVersion
-@RequestMapping("/{apiVersion}/repay")
+@RequestMapping("/v1.0/repay")
 public class RepayController {
 }

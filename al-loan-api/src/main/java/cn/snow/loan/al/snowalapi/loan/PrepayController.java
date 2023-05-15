@@ -12,6 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @Slf4j
 @ApiVersion
-@RequestMapping("/{apiVersion}/prepay")
+@RequestMapping("/v1.0/prepay")
 public class PrepayController {
 }

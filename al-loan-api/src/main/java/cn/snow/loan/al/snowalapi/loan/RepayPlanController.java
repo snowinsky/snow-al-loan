@@ -36,14 +36,13 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @Slf4j
 @ApiVersion
-@RequestMapping("/{apiVersion}/repay-plan")
+@RequestMapping("/v1.0/repay-plan")
 public class RepayPlanController {
 
     private static final AlLoanContractRepay CONTRACT_REPAY = new AlLoanContractRepay();
 
     @PostMapping(value = "/draft", produces = MediaType.APPLICATION_JSON_VALUE)
     @PrintInAndOutLog
-    @ApiVersion(value = "1.2")
     public ResponseData<OutDraftAlLoanRepayPlan> draftReplayPlan(@RequestBody @Validated InDraftAlLoanContract alLoanContractIn) {
         FundingLoanContract contract = new FundingLoanContract(
                 LoanAmount.valueOf(BigDecimal.valueOf(alLoanContractIn.getLoanAmount())),

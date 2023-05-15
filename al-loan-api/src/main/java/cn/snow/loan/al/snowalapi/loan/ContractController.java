@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @Slf4j
 @ApiVersion
-@RequestMapping("/{apiVersion}/contract")
+@RequestMapping("/v1.0/contract")
 public class ContractController {
 
     private static final AlLoanContractRepay CONTRACT_REPAY = new AlLoanContractRepay();
