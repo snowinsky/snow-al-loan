@@ -4,7 +4,6 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
@@ -12,26 +11,24 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 
 import lombok.Data;
 
-@Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class InAlLoanContract {
+@Data
+@SuppressWarnings("all")
+public class InDraftAlLoanContract {
 
-    @JsonProperty("contractNo")
-    private String contractNo;
-    private double loanAmount = 12000;
-    private double fundingYearRate = 8.2;
-    private double overdueFeeYearRate = 8.2;
-    private int loanTerm = 12;
-    private int repayMonthDay = 12;
+    private double loanAmount;
+    private double fundingYearRate;
+    //private double overdueFeeYearRate;
+    private int loanTerm;
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd", timezone="Asia/Shanghai")
     @JsonSerialize(using = LocalDateSerializer.class)
     @JsonDeserialize(using = LocalDateDeserializer.class)
     private LocalDate firstRepayDate;
-    private int dayOfGrace = 5;
+    //private int dayOfGrace;
 
-    private double alFundingYearRate = 23.898;
-    private double breachFeeDayRate = 0.062;
-    private double termLateFeeDayRate = 0.097;
-    private double loanLateFeeDayRate = 0.097;
-    private int dayOfCompensation = 10;
+    private double alFundingYearRate;
+    //private double breachFeeDayRate;
+    //private double termLateFeeDayRate;
+    //private double loanLateFeeDayRate;
+    //private int dayOfCompensation;
 }
